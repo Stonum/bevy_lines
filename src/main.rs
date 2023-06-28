@@ -2,12 +2,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use bevy::prelude::*;
-use bevy::winit::WinitSettings;
 #[cfg(feature = "debug")]
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use rand::prelude::*;
-use std::collections::HashMap;
-use std::time::Duration;
+
+mod resources;
+use resources::*;
 
 mod components;
 use components::*;
@@ -21,7 +20,7 @@ use events::*;
 const TILE_SIZE: f32 = 45.0;
 const TILE_PADDING: f32 = 5.0;
 const TILE_COUNT: u8 = 9;
-const BALL_SIZE: f32 = 30.0;
+const BALL_SIZE: f32 = 35.0;
 
 const BACKGROUND_COLOR: Color = Color::rgb(0.0, 0.0, 0.0);
 const BOARD_COLOR: Color = Color::rgb(0.53, 0.53, 0.53);
@@ -45,7 +44,8 @@ fn main() {
         .register_type::<Ball>();
 
     app.insert_resource(ClearColor(BACKGROUND_COLOR))
-        .insert_resource(Board::new(TILE_COUNT, TILE_SIZE));
+        .insert_resource(Board::new(TILE_COUNT, TILE_SIZE))
+        .init_resource::<BallAssets>();
 
     app.add_startup_system(spawn_camera)
         .add_startup_system(spawn_board)

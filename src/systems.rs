@@ -1,17 +1,11 @@
 use crate::components::*;
 use crate::events::*;
+use crate::resources::*;
 use crate::{BALL_SIZE, BOARD_COLOR, TILE_COLOR, TILE_COUNT, TILE_PADDING, TILE_SIZE};
 use bevy::prelude::*;
-use bevy::sprite::MaterialMesh2dBundle;
 use bevy::window::PrimaryWindow;
-use rand::seq::SliceRandom;
 
-pub fn spawn_board(
-    mut board: ResMut<Board>,
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-) {
+pub fn spawn_board(mut board: ResMut<Board>, ball_assets: Res<BallAssets>, mut commands: Commands) {
     let entity = commands
         .spawn((SpriteBundle {
             sprite: Sprite {
@@ -46,11 +40,13 @@ pub fn spawn_board(
                 board.tiles_map.insert(coord, Some(ball_color));
 
                 parent
-                    .spawn(MaterialMesh2dBundle {
-                        mesh: meshes
-                            .add(shape::Circle::new(BALL_SIZE / 2.0).into())
-                            .into(),
-                        material: materials.add(ColorMaterial::from(ball_color.0)),
+                    .spawn(SpriteBundle {
+                        texture: ball_assets.texture.clone(),
+                        sprite: Sprite {
+                            custom_size: Some(Vec2::splat(BALL_SIZE)),
+                            color: ball_color.0,
+                            ..default()
+                        },
                         transform: Transform::from_xyz(
                             board.phisical_pos(coord.0),
                             board.phisical_pos(coord.1),
@@ -70,12 +66,7 @@ pub fn spawn_board(
     board.entity = Some(entity);
 }
 
-pub fn spawn_next_board(
-    board: Res<Board>,
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-) {
+pub fn spawn_next_board(board: Res<Board>, ball_assets: Res<BallAssets>, mut commands: Commands) {
     commands
         .spawn(SpriteBundle {
             sprite: Sprite {
@@ -104,11 +95,13 @@ pub fn spawn_next_board(
 
                 let ball_color = BallColor::new();
                 parent
-                    .spawn(MaterialMesh2dBundle {
-                        mesh: meshes
-                            .add(shape::Circle::new(BALL_SIZE / 2.0).into())
-                            .into(),
-                        material: materials.add(ColorMaterial::from(ball_color.0)),
+                    .spawn(SpriteBundle {
+                        texture: ball_assets.texture.clone(),
+                        sprite: Sprite {
+                            custom_size: Some(Vec2::splat(BALL_SIZE)),
+                            color: ball_color.0,
+                            ..default()
+                        },
                         transform: Transform::from_xyz(position_x, 0., 2.),
                         ..default()
                     })
@@ -122,7 +115,7 @@ pub fn change_next_color(
     mut query_next_ball: Query<&mut BallColor, With<NextBall>>,
     mut ev_change_next: EventReader<ChangeNextBalls>,
 ) {
-    for ev in ev_change_next.iter() {
+    for _ in ev_change_next.iter() {
         println!("Change next color");
         for mut color in query_next_ball.iter_mut() {
             color.0 = BallColor::new().0;
@@ -131,14 +124,10 @@ pub fn change_next_color(
 }
 
 pub fn render_next_balls(
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    mut query: Query<
-        (&BallColor, &mut Handle<ColorMaterial>),
-        (Changed<BallColor>, With<NextBall>),
-    >,
+    mut query: Query<(&BallColor, &mut Sprite), (Changed<BallColor>, With<NextBall>)>,
 ) {
-    for (color, mut handle) in query.iter_mut() {
-        *handle = materials.add(ColorMaterial::from(color.0));
+    for (color, mut sprite) in query.iter_mut() {
+        sprite.color = color.0;
     }
 }
 
@@ -201,8 +190,7 @@ pub fn animate_ball_system(mut commands: Commands, board: Res<Board>) {
 
 pub fn spawn_new_balls(
     mut board: ResMut<Board>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    ball_assets: Res<BallAssets>,
     mut commands: Commands,
     query_next_ball: Query<&mut BallColor, With<NextBall>>,
     mut ev_spawn_balls: EventReader<SpawnBallsEvent>,
@@ -216,11 +204,13 @@ pub fn spawn_new_balls(
 
                 commands.entity(entity).with_children(|parent| {
                     parent
-                        .spawn(MaterialMesh2dBundle {
-                            mesh: meshes
-                                .add(shape::Circle::new(BALL_SIZE / 2.0).into())
-                                .into(),
-                            material: materials.add(ColorMaterial::from(color.0)),
+                        .spawn(SpriteBundle {
+                            texture: ball_assets.texture.clone(),
+                            sprite: Sprite {
+                                custom_size: Some(Vec2::splat(BALL_SIZE)),
+                                color: color.0,
+                                ..default()
+                            },
                             transform: Transform::from_xyz(
                                 board.phisical_pos(coord.0),
                                 board.phisical_pos(coord.1),
