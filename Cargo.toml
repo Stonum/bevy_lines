@@ -23,3 +23,10 @@ opt-level = 3
 # Maybe also enable only a small amount of optimization for our code:
 [profile.dev]
 opt-level = 1
+
+[package.metadata.scripts]
+run = "cargo run"
+debug = "cargo run --features debug"
+check = "cargo check"
+build = "cargo build"
+release = "cargo build --release"
