@@ -2,6 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use bevy::prelude::*;
+use bevy_embedded_assets::EmbeddedAssetPlugin;
 #[cfg(feature = "debug")]
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
@@ -28,14 +29,19 @@ const TILE_COLOR: Color = Color::rgb(0.88, 0.88, 0.88);
 
 fn main() {
     let mut app = App::new();
-    app.add_plugins(DefaultPlugins.set(WindowPlugin {
-        primary_window: Some(Window {
-            title: "Lines".into(),
-            resolution: (800., 600.).into(),
-            ..default()
-        }),
-        ..default()
-    }));
+    app.add_plugins(
+        DefaultPlugins
+            .set(WindowPlugin {
+                primary_window: Some(Window {
+                    title: "Lines".into(),
+                    resolution: (800., 600.).into(),
+                    ..default()
+                }),
+                ..default()
+            })
+            .build()
+            .add_before::<bevy::asset::AssetPlugin, _>(EmbeddedAssetPlugin),
+    );
 
     #[cfg(feature = "debug")]
     app.add_plugin(WorldInspectorPlugin::new())

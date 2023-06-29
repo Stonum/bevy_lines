@@ -10,6 +10,7 @@ debug = ["bevy-inspector-egui"]
 
 [dependencies]
 bevy = "0.10.1"
+bevy_embedded_assets = "0.7.0"
 rand = "0.8.5"
 
 [dependencies.bevy-inspector-egui]
