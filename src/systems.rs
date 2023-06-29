@@ -146,7 +146,7 @@ pub fn handle_mouse_clicks(
     mouse_input: Res<Input<MouseButton>>,
     mut board: ResMut<Board>,
     q_windows: Query<&Window, With<PrimaryWindow>>,
-    mut q_balls: Query<(Entity, &mut Coordinates), With<Ball>>,
+    mut q_balls: Query<(Entity, &mut Coordinates, &BallColor), With<Ball>>,
     mut ev_spawn_balls: EventWriter<SpawnBallsEvent>,
     mut ev_change_next: EventWriter<ChangeNextBalls>,
 ) {
@@ -156,18 +156,23 @@ pub fn handle_mouse_clicks(
     if mouse_input.just_pressed(MouseButton::Left) {
         if let Some(position) = win.cursor_position() {
             if let Some(coord) = board.logical_pos(win, position) {
-                for (entity, ball_coord) in q_balls.iter() {
+                for (entity, ball_coord, _ball_color) in q_balls.iter() {
                     if *ball_coord == coord {
                         board.active_ball = Some(entity);
                     }
                 }
                 // move ball to new position
                 if let Some(ball) = board.active_ball {
-                    if let Ok((_, ref mut coordinates)) = q_balls.get_mut(ball) {
+                    if let Ok((_entity, mut coordinates, color)) = q_balls.get_mut(ball) {
                         if coordinates.0 != coord.0 || coordinates.1 != coord.1 {
                             coordinates.0 = coord.0;
                             coordinates.1 = coord.1;
                             board.active_ball = None;
+
+                            // remove ball from coordinates
+                            board.tiles_map.insert(*coordinates, None);
+                            // move ball to coord
+                            board.tiles_map.insert(coord, Some(*color));
 
                             // spawn new balls
                             ev_spawn_balls.send(SpawnBallsEvent);

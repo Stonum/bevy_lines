@@ -51,13 +51,12 @@ impl Board {
     }
 
     pub fn get_free_tile(&self) -> Option<Coordinates> {
-        let mut free_tiles = vec![];
-        for (coord, color) in &self.tiles_map {
-            match color {
-                None => free_tiles.push(coord),
-                _ => (),
-            }
-        }
+        let free_tiles: Vec<&Coordinates> = self
+            .tiles_map
+            .iter()
+            .filter(|(_coord, color)| color.is_none())
+            .map(|(coord, _color)| coord)
+            .collect();
 
         if let Some(coord) = free_tiles.choose(&mut rand::thread_rng()) {
             return Some(**coord);

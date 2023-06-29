@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use bevy_inspector_egui::prelude::*;
 use rand::prelude::*;
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Component)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Component)]
 #[cfg_attr(feature = "debug", derive(Reflect, InspectorOptions))]
 #[cfg_attr(feature = "debug", reflect(InspectorOptions))]
 pub struct Coordinates(pub u8, pub u8);
