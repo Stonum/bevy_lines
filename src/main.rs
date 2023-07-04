@@ -22,6 +22,7 @@ const TILE_SIZE: f32 = 45.0;
 const TILE_PADDING: f32 = 5.0;
 const TILE_COUNT: u8 = 9;
 const BALL_SIZE: f32 = 35.0;
+const MIN_BALLS_INLINE: usize = 5;
 
 const BACKGROUND_COLOR: Color = Color::rgb(0.0, 0.0, 0.0);
 const BOARD_COLOR: Color = Color::rgb(0.53, 0.53, 0.53);

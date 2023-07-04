@@ -12,10 +12,7 @@ debug = ["bevy-inspector-egui"]
 bevy = "0.10.1"
 bevy_embedded_assets = "0.7.0"
 rand = "0.8.5"
-
-[dependencies.bevy-inspector-egui]
-version = "0.18.3"
-optional = true
+bevy-inspector-egui = { version = "0.18.3", optional = true }
 
 # Enable optimizations for dependencies (incl. Bevy), but not for our code:
 [profile.dev.package."*"]
