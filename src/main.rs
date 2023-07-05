@@ -52,16 +52,19 @@ fn main() {
 
     app.insert_resource(ClearColor(BACKGROUND_COLOR))
         .insert_resource(Board::new(TILE_COUNT, TILE_SIZE))
+        .init_resource::<Game>()
         .init_resource::<BallAssets>();
 
     app.add_startup_system(spawn_camera)
         .add_startup_system(spawn_board)
         .add_startup_system(spawn_next_board)
+        .add_startup_system(spawn_score_fields)
         .add_event::<SpawnBallsEvent>()
         .add_event::<SelectBallEvent>()
         .add_event::<MoveBallEvent>()
         .add_event::<ChangeNextBalls>()
         .add_system(render_next_balls)
+        .add_system(render_score_text)
         .add_system(render_balls)
         .add_system(animate_ball_system)
         .add_systems((handle_mouse_clicks, spawn_new_balls, change_next_color).chain())

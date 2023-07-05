@@ -80,6 +80,7 @@ pub fn spawn_next_board(board: Res<Board>, ball_assets: Res<BallAssets>, mut com
             for x in 0..3 {
                 let position_x: f32 = -TILE_SIZE + TILE_SIZE * x as f32;
 
+                // spawn tiles
                 parent.spawn(SpriteBundle {
                     sprite: Sprite {
                         color: TILE_COLOR,
@@ -90,6 +91,7 @@ pub fn spawn_next_board(board: Res<Board>, ball_assets: Res<BallAssets>, mut com
                     ..default()
                 });
 
+                // spawn startup colors
                 let ball_color = BallColor::new();
                 parent
                     .spawn(SpriteBundle {
@@ -106,6 +108,35 @@ pub fn spawn_next_board(board: Res<Board>, ball_assets: Res<BallAssets>, mut com
                     .insert(ball_color);
             }
         });
+}
+
+pub fn spawn_score_fields(
+    game: Res<Game>,
+    board: Res<Board>,
+    asset_server: Res<AssetServer>,
+    mut commands: Commands,
+) {
+    let font = asset_server.load("fonts/Glitch-Demo.ttf");
+    let text_style = TextStyle {
+        font: font.clone(),
+        font_size: 60.0,
+        color: Color::GREEN,
+    };
+    let text_alignment = TextAlignment::Center;
+
+    let position_y = board.phisical_size / 2. + TILE_SIZE;
+    let position_x = TILE_SIZE * 4.;
+
+    commands
+        .spawn(Text2dBundle {
+            text: Text {
+                sections: vec![TextSection::new(format!("{:0>5}", game.score), text_style)],
+                ..Default::default()
+            },
+            transform: Transform::from_xyz(position_x, position_y, 0.),
+            ..default()
+        })
+        .insert(ScoreText);
 }
 
 pub fn change_next_color(
@@ -128,6 +159,14 @@ pub fn render_next_balls(
     }
 }
 
+pub fn render_score_text(game: Res<Game>, mut query: Query<&mut Text, With<ScoreText>>) {
+    if game.is_changed() {
+        for mut text in &mut query {
+            text.sections[0].value = format!("{:0>5}", game.score);
+        }
+    }
+}
+
 pub fn render_balls(
     board: Res<Board>,
     mut query: Query<(&Coordinates, &mut Transform), (Changed<Coordinates>, With<Ball>)>,
@@ -142,6 +181,7 @@ pub fn render_balls(
 
 pub fn handle_mouse_clicks(
     mouse_input: Res<Input<MouseButton>>,
+    mut game: ResMut<Game>,
     mut board: ResMut<Board>,
     mut commands: Commands,
     q_windows: Query<&Window, With<PrimaryWindow>>,
@@ -175,13 +215,19 @@ pub fn handle_mouse_clicks(
                             coordinates.1 = coord.1;
 
                             let despawned_balls = board.get_balls_for_despawn();
+
                             for line in despawned_balls {
+                                // set game score
+                                game.score += line.len() as u32 * 2;
+
                                 for coord in line {
-                                    for (entity, ball_coord, ..) in q_balls.iter_mut() {
-                                        if ball_coord.clone() == coord {
-                                            board.tiles_map.insert(coord, None);
-                                            commands.entity(entity).despawn_recursive();
-                                        }
+                                    let ball = q_balls
+                                        .iter_mut()
+                                        .find(|(_, ball_coord, ..)| (*ball_coord).clone() == coord);
+
+                                    if let Some((entity, ..)) = ball {
+                                        board.tiles_map.insert(coord, None);
+                                        commands.entity(entity).despawn_recursive();
                                     }
                                 }
                             }
