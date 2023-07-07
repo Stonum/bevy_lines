@@ -3,7 +3,6 @@ use rand::prelude::*;
 use std::collections::HashMap;
 
 use crate::components::*;
-use crate::MIN_BALLS_INLINE;
 
 #[derive(Resource)]
 pub struct BallAssets {
@@ -22,39 +21,77 @@ impl FromWorld for BallAssets {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct BoardOptions {
+    pub tile_size: f32,
+    pub tile_padding: f32,
+    pub tile_count: u8,
+    pub ball_size: f32,
+    pub mon_balls_on_line: usize,
+}
+
+impl Default for BoardOptions {
+    fn default() -> Self {
+        Self {
+            tile_size: 45.0,
+            tile_padding: 5.0,
+            tile_count: 9,
+            ball_size: 35.0,
+            mon_balls_on_line: 5,
+        }
+    }
+}
+
+#[derive(Resource)]
+pub struct BoardAssets {
+    pub board_color: Color,
+    pub tile_color: Color,
+}
+
+impl Default for BoardAssets {
+    fn default() -> Self {
+        Self {
+            board_color: Color::rgb(0.53, 0.53, 0.53),
+            tile_color: Color::rgb(0.88, 0.88, 0.88),
+        }
+    }
+}
+
 #[derive(Resource)]
 pub struct Board {
     pub entity: Option<Entity>,
-    tile_size: f32,
-    tiles_count: u8,
+    pub options: BoardOptions,
     pub tiles_map: HashMap<Coordinates, Option<BallColor>>,
     pub phisical_size: f32,
     pub active_ball: Option<Entity>,
 }
 
-impl Board {
-    pub fn new(tiles_count: u8, tile_size: f32) -> Self {
+impl Default for Board {
+    fn default() -> Self {
+        let options = BoardOptions::default();
+
         let mut tiles = HashMap::new();
-        for x in 0..tiles_count {
-            for y in 0..tiles_count {
+        for x in 0..options.tile_count {
+            for y in 0..options.tile_count {
                 tiles.insert(Coordinates(x, y), None);
             }
         }
 
         Self {
             entity: None,
-            tile_size,
-            tiles_count,
-            phisical_size: tile_size * tiles_count as f32,
+            options,
+            phisical_size: options.tile_size * options.tile_count as f32,
             active_ball: None,
             tiles_map: tiles,
         }
     }
+}
 
+impl Board {
     // get all lines for board. horisontal, vertical and diagonal
     fn get_lines(&self) -> Vec<Vec<Coordinates>> {
         let mut lines: Vec<_> = vec![];
-        let count = self.tiles_count as i32;
+        let count = self.options.tile_count as i32;
 
         // diagonal lines
         for x in -count..count * 2 {
@@ -76,19 +113,19 @@ impl Board {
                     rev_diagonal.push(Coordinates(row as u8, col as u8));
                 }
             }
-            if diagonal.len() >= MIN_BALLS_INLINE {
+            if diagonal.len() >= self.options.mon_balls_on_line {
                 lines.push(diagonal);
             }
-            if rev_diagonal.len() >= MIN_BALLS_INLINE {
+            if rev_diagonal.len() >= self.options.mon_balls_on_line {
                 lines.push(rev_diagonal);
             }
         }
 
         // vertical lines
-        for x in 0..self.tiles_count {
+        for x in 0..self.options.tile_count {
             let mut line = vec![];
 
-            for y in 0..self.tiles_count {
+            for y in 0..self.options.tile_count {
                 line.push(Coordinates(x, y));
             }
 
@@ -96,10 +133,10 @@ impl Board {
         }
 
         // horisontal lines
-        for y in 0..self.tiles_count {
+        for y in 0..self.options.tile_count {
             let mut line = vec![];
 
-            for x in 0..self.tiles_count {
+            for x in 0..self.options.tile_count {
                 line.push(Coordinates(x, y));
             }
 
@@ -126,8 +163,8 @@ impl Board {
     pub fn phisical_pos(&self, coord: &Coordinates) -> Vec2 {
         let offset = -self.phisical_size / 2.;
         Vec2::new(
-            (coord.0 as f32 * self.tile_size) + (self.tile_size / 2.) + offset,
-            -((coord.1 as f32 * self.tile_size) + (self.tile_size / 2.) + offset),
+            (coord.0 as f32 * self.options.tile_size) + (self.options.tile_size / 2.) + offset,
+            -((coord.1 as f32 * self.options.tile_size) + (self.options.tile_size / 2.) + offset),
         )
     }
 
@@ -141,8 +178,8 @@ impl Board {
         }
 
         let coord = Coordinates(
-            ((position.x + size) / self.tile_size) as u8,
-            ((position.y - size).abs() / self.tile_size) as u8,
+            ((position.x + size) / self.options.tile_size) as u8,
+            ((position.y - size).abs() / self.options.tile_size) as u8,
         );
         Some(coord)
     }

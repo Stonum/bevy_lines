@@ -1,17 +1,22 @@
+use bevy::prelude::*;
+use bevy::window::PrimaryWindow;
 use std::cmp::Ordering;
 
 use crate::components::*;
 use crate::events::*;
+use crate::next_balls::*;
 use crate::resources::*;
-use crate::{BALL_SIZE, BOARD_COLOR, TILE_COLOR, TILE_PADDING, TILE_SIZE};
-use bevy::prelude::*;
-use bevy::window::PrimaryWindow;
 
-pub fn spawn_board(mut board: ResMut<Board>, ball_assets: Res<BallAssets>, mut commands: Commands) {
+pub fn spawn_board(
+    mut board: ResMut<Board>,
+    board_assets: Res<BoardAssets>,
+    ball_assets: Res<BallAssets>,
+    mut commands: Commands,
+) {
     let entity = commands
         .spawn((SpriteBundle {
             sprite: Sprite {
-                color: BOARD_COLOR,
+                color: board_assets.board_color,
                 custom_size: Some(Vec2::splat(board.phisical_size)),
                 ..default()
             },
@@ -22,8 +27,10 @@ pub fn spawn_board(mut board: ResMut<Board>, ball_assets: Res<BallAssets>, mut c
                 let position = board.phisical_pos(&coord);
                 parent.spawn(SpriteBundle {
                     sprite: Sprite {
-                        color: TILE_COLOR,
-                        custom_size: Some(Vec2::splat(TILE_SIZE - TILE_PADDING)),
+                        color: board_assets.tile_color,
+                        custom_size: Some(Vec2::splat(
+                            board.options.tile_size - board.options.tile_padding,
+                        )),
                         ..default()
                     },
                     transform: Transform::from_translation(position.extend(1.)),
@@ -42,7 +49,7 @@ pub fn spawn_board(mut board: ResMut<Board>, ball_assets: Res<BallAssets>, mut c
                     .spawn(SpriteBundle {
                         texture: ball_assets.texture.clone(),
                         sprite: Sprite {
-                            custom_size: Some(Vec2::splat(BALL_SIZE)),
+                            custom_size: Some(Vec2::splat(board.options.ball_size)),
                             color: ball_color.get(),
                             ..default()
                         },
@@ -63,53 +70,6 @@ pub fn spawn_board(mut board: ResMut<Board>, ball_assets: Res<BallAssets>, mut c
     board.entity = Some(entity);
 }
 
-pub fn spawn_next_board(board: Res<Board>, ball_assets: Res<BallAssets>, mut commands: Commands) {
-    commands
-        .spawn(SpriteBundle {
-            sprite: Sprite {
-                color: BOARD_COLOR,
-                custom_size: Some(Vec2::new(TILE_SIZE * 3.0, TILE_SIZE)),
-                ..default()
-            },
-            transform: Transform::from_xyz(0., board.phisical_size / 2. + TILE_SIZE, 0.),
-            ..default()
-        })
-        .insert(Name::new("NextBoard"))
-        .insert(NextBoard)
-        .with_children(|parent| {
-            for x in 0..3 {
-                let position_x: f32 = -TILE_SIZE + TILE_SIZE * x as f32;
-
-                // spawn tiles
-                parent.spawn(SpriteBundle {
-                    sprite: Sprite {
-                        color: TILE_COLOR,
-                        custom_size: Some(Vec2::splat(TILE_SIZE - TILE_PADDING)),
-                        ..default()
-                    },
-                    transform: Transform::from_xyz(position_x, 0., 1.),
-                    ..default()
-                });
-
-                // spawn startup colors
-                let ball_color = BallColor::new();
-                parent
-                    .spawn(SpriteBundle {
-                        texture: ball_assets.texture.clone(),
-                        sprite: Sprite {
-                            custom_size: Some(Vec2::splat(BALL_SIZE)),
-                            color: ball_color.get(),
-                            ..default()
-                        },
-                        transform: Transform::from_xyz(position_x, 0., 2.),
-                        ..default()
-                    })
-                    .insert(NextBall)
-                    .insert(ball_color);
-            }
-        });
-}
-
 pub fn spawn_score_fields(
     game: Res<Game>,
     board: Res<Board>,
@@ -122,10 +82,9 @@ pub fn spawn_score_fields(
         font_size: 60.0,
         color: Color::GREEN,
     };
-    let text_alignment = TextAlignment::Center;
 
-    let position_y = board.phisical_size / 2. + TILE_SIZE;
-    let position_x = TILE_SIZE * 4.;
+    let position_y = board.phisical_size / 2. + board.options.tile_size;
+    let position_x = board.options.tile_size * 4.;
 
     commands
         .spawn(Text2dBundle {
@@ -137,34 +96,6 @@ pub fn spawn_score_fields(
             ..default()
         })
         .insert(ScoreText);
-}
-
-pub fn change_next_color(
-    mut query_next_ball: Query<&mut BallColor, With<NextBall>>,
-    mut ev_change_next: EventReader<ChangeNextBalls>,
-) {
-    for _ in ev_change_next.iter() {
-        info!("Change next color");
-        for mut color in query_next_ball.iter_mut() {
-            *color = BallColor::new();
-        }
-    }
-}
-
-pub fn render_next_balls(
-    mut query: Query<(&BallColor, &mut Sprite), (Changed<BallColor>, With<NextBall>)>,
-) {
-    for (color, mut sprite) in query.iter_mut() {
-        sprite.color = color.get();
-    }
-}
-
-pub fn render_score_text(game: Res<Game>, mut query: Query<&mut Text, With<ScoreText>>) {
-    if game.is_changed() {
-        for mut text in &mut query {
-            text.sections[0].value = format!("{:0>5}", game.score);
-        }
-    }
 }
 
 pub fn render_balls(
@@ -187,7 +118,6 @@ pub fn handle_mouse_clicks(
     q_windows: Query<&Window, With<PrimaryWindow>>,
     mut q_balls: Query<(Entity, &mut Coordinates, &BallColor), With<Ball>>,
     mut ev_spawn_balls: EventWriter<SpawnBallsEvent>,
-    mut ev_change_next: EventWriter<ChangeNextBalls>,
 ) {
     let win = q_windows.get_single().expect("no primary window");
     // let mut board = query_board.get_single().expect("no board");
@@ -234,8 +164,6 @@ pub fn handle_mouse_clicks(
 
                             // spawn new balls
                             ev_spawn_balls.send(SpawnBallsEvent);
-                            // change next colors
-                            ev_change_next.send(ChangeNextBalls);
                         }
                     }
                 }
@@ -244,8 +172,8 @@ pub fn handle_mouse_clicks(
     }
 }
 
-pub fn animate_ball_system(mut commands: Commands, board: Res<Board>) {
-    if let Some(ball) = board.active_ball {
+pub fn animate_ball_system(mut _commands: Commands, board: Res<Board>) {
+    if let Some(_ball) = board.active_ball {
 
         // commands.entity(ball)
     }
@@ -257,6 +185,7 @@ pub fn spawn_new_balls(
     mut commands: Commands,
     query_next_ball: Query<&mut BallColor, With<NextBall>>,
     mut ev_spawn_balls: EventReader<SpawnBallsEvent>,
+    mut ev_change_next: EventWriter<ChangeNextBalls>,
 ) {
     for _ in ev_spawn_balls.iter() {
         info!("Spawn new balls");
@@ -270,7 +199,7 @@ pub fn spawn_new_balls(
                         .spawn(SpriteBundle {
                             texture: ball_assets.texture.clone(),
                             sprite: Sprite {
-                                custom_size: Some(Vec2::splat(BALL_SIZE)),
+                                custom_size: Some(Vec2::splat(board.options.ball_size)),
                                 color: color.get(),
                                 ..default()
                             },
@@ -285,6 +214,16 @@ pub fn spawn_new_balls(
                         .insert(coord);
                 });
             }
+            // change next colors
+            ev_change_next.send(ChangeNextBalls);
+        }
+    }
+}
+
+pub fn render_score_text(game: Res<Game>, mut query: Query<&mut Text, With<ScoreText>>) {
+    if game.is_changed() {
+        for mut text in &mut query {
+            text.sections[0].value = format!("{:0>5}", game.score);
         }
     }
 }

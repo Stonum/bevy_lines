@@ -10,7 +10,6 @@ mod resources;
 use resources::*;
 
 mod components;
-use components::*;
 
 mod systems;
 use systems::*;
@@ -18,19 +17,19 @@ use systems::*;
 mod events;
 use events::*;
 
-const TILE_SIZE: f32 = 45.0;
-const TILE_PADDING: f32 = 5.0;
-const TILE_COUNT: u8 = 9;
-const BALL_SIZE: f32 = 35.0;
-const MIN_BALLS_INLINE: usize = 5;
+mod next_balls;
+use next_balls::*;
 
-const BACKGROUND_COLOR: Color = Color::rgb(0.0, 0.0, 0.0);
-const BOARD_COLOR: Color = Color::rgb(0.53, 0.53, 0.53);
-const TILE_COLOR: Color = Color::rgb(0.88, 0.88, 0.88);
+#[derive(States, Default, Clone, Eq, PartialEq, Debug, Hash)]
+enum GameState {
+    #[default]
+    Playing,
+    Menu,
+}
 
 fn main() {
     let mut app = App::new();
-    app.add_plugins(
+    app.add_state::<GameState>().add_plugins(
         DefaultPlugins
             .set(WindowPlugin {
                 primary_window: Some(Window {
@@ -50,24 +49,24 @@ fn main() {
         .register_type::<BallColor>()
         .register_type::<Ball>();
 
-    app.insert_resource(ClearColor(BACKGROUND_COLOR))
-        .insert_resource(Board::new(TILE_COUNT, TILE_SIZE))
+    app.insert_resource(ClearColor(Color::BLACK))
+        .init_resource::<BoardAssets>()
+        .init_resource::<Board>()
         .init_resource::<Game>()
         .init_resource::<BallAssets>();
 
+    app.add_plugin(NextBallsPlugin);
+
     app.add_startup_system(spawn_camera)
         .add_startup_system(spawn_board)
-        .add_startup_system(spawn_next_board)
         .add_startup_system(spawn_score_fields)
         .add_event::<SpawnBallsEvent>()
         .add_event::<SelectBallEvent>()
         .add_event::<MoveBallEvent>()
-        .add_event::<ChangeNextBalls>()
-        .add_system(render_next_balls)
         .add_system(render_score_text)
         .add_system(render_balls)
         .add_system(animate_ball_system)
-        .add_systems((handle_mouse_clicks, spawn_new_balls, change_next_color).chain())
+        .add_systems((handle_mouse_clicks, spawn_new_balls).chain())
         .run();
 }
 

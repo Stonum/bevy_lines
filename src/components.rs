@@ -9,12 +9,6 @@ use rand::prelude::*;
 pub struct Coordinates(pub u8, pub u8);
 
 #[derive(Debug, Component)]
-pub struct NextBoard;
-
-#[derive(Debug, Component)]
-pub struct NextBall;
-
-#[derive(Debug, Component)]
 #[cfg_attr(feature = "debug", derive(Reflect, InspectorOptions))]
 #[cfg_attr(feature = "debug", reflect(InspectorOptions))]
 pub struct Ball;
