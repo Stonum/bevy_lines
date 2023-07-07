@@ -52,6 +52,3 @@ impl BallColor {
         }
     }
 }
-
-#[derive(Component)]
-pub struct ScoreText;

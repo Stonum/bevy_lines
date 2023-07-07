@@ -230,8 +230,3 @@ impl Board {
         result
     }
 }
-
-#[derive(Default, Resource)]
-pub struct Game {
-    pub score: u32,
-}

@@ -18,13 +18,16 @@ mod events;
 use events::*;
 
 mod next_balls;
-use next_balls::*;
+use next_balls::NextBallsPlugin;
+
+mod game_score;
+use game_score::GameScorePlugin;
 
 #[derive(States, Default, Clone, Eq, PartialEq, Debug, Hash)]
 enum GameState {
     #[default]
     Playing,
-    Menu,
+    GameOver,
 }
 
 fn main() {
@@ -52,18 +55,15 @@ fn main() {
     app.insert_resource(ClearColor(Color::BLACK))
         .init_resource::<BoardAssets>()
         .init_resource::<Board>()
-        .init_resource::<Game>()
         .init_resource::<BallAssets>();
 
-    app.add_plugin(NextBallsPlugin);
+    app.add_plugin(NextBallsPlugin).add_plugin(GameScorePlugin);
 
     app.add_startup_system(spawn_camera)
         .add_startup_system(spawn_board)
-        .add_startup_system(spawn_score_fields)
         .add_event::<SpawnBallsEvent>()
         .add_event::<SelectBallEvent>()
         .add_event::<MoveBallEvent>()
-        .add_system(render_score_text)
         .add_system(render_balls)
         .add_system(animate_ball_system)
         .add_systems((handle_mouse_clicks, spawn_new_balls).chain())

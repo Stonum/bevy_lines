@@ -4,6 +4,7 @@ use std::cmp::Ordering;
 
 use crate::components::*;
 use crate::events::*;
+use crate::game_score::GameScore;
 use crate::next_balls::*;
 use crate::resources::*;
 
@@ -70,34 +71,6 @@ pub fn spawn_board(
     board.entity = Some(entity);
 }
 
-pub fn spawn_score_fields(
-    game: Res<Game>,
-    board: Res<Board>,
-    asset_server: Res<AssetServer>,
-    mut commands: Commands,
-) {
-    let font = asset_server.load("fonts/Glitch-Demo.ttf");
-    let text_style = TextStyle {
-        font: font.clone(),
-        font_size: 60.0,
-        color: Color::GREEN,
-    };
-
-    let position_y = board.phisical_size / 2. + board.options.tile_size;
-    let position_x = board.options.tile_size * 4.;
-
-    commands
-        .spawn(Text2dBundle {
-            text: Text {
-                sections: vec![TextSection::new(format!("{:0>5}", game.score), text_style)],
-                ..Default::default()
-            },
-            transform: Transform::from_xyz(position_x, position_y, 0.),
-            ..default()
-        })
-        .insert(ScoreText);
-}
-
 pub fn render_balls(
     board: Res<Board>,
     mut query: Query<(&Coordinates, &mut Transform), (Changed<Coordinates>, With<Ball>)>,
@@ -112,7 +85,7 @@ pub fn render_balls(
 
 pub fn handle_mouse_clicks(
     mouse_input: Res<Input<MouseButton>>,
-    mut game: ResMut<Game>,
+    mut game: ResMut<GameScore>,
     mut board: ResMut<Board>,
     mut commands: Commands,
     q_windows: Query<&Window, With<PrimaryWindow>>,
@@ -148,7 +121,7 @@ pub fn handle_mouse_clicks(
 
                             for line in despawned_balls {
                                 // set game score
-                                game.score += line.len() as u32 * 2;
+                                game.current_score += line.len() as u32 * 2;
 
                                 for coord in line {
                                     let ball = q_balls
@@ -216,14 +189,6 @@ pub fn spawn_new_balls(
             }
             // change next colors
             ev_change_next.send(ChangeNextBalls);
-        }
-    }
-}
-
-pub fn render_score_text(game: Res<Game>, mut query: Query<&mut Text, With<ScoreText>>) {
-    if game.is_changed() {
-        for mut text in &mut query {
-            text.sections[0].value = format!("{:0>5}", game.score);
         }
     }
 }

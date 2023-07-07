@@ -72,7 +72,6 @@ fn spawn_next_board(board: Res<Board>, board_assets: Res<BoardAssets>, mut comma
 
 fn spawn_next_balls(
     board: Res<Board>,
-    board_assets: Res<BoardAssets>,
     ball_assets: Res<BallAssets>,
     mut commands: Commands,
     q_next_tiles: Query<Entity, With<NextTile>>,
