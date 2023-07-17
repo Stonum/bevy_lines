@@ -2,11 +2,13 @@ use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use std::cmp::Ordering;
 
-use crate::components::*;
-use crate::events::*;
-use crate::game_score::GameScore;
-use crate::next_balls::*;
-use crate::resources::*;
+use crate::events::IncrementCurrentGameScore;
+
+use super::ball::*;
+use super::board::*;
+use super::events::*;
+use super::next_balls::*;
+use super::Coordinates;
 
 pub fn spawn_board(
     mut board: ResMut<Board>,
@@ -85,12 +87,12 @@ pub fn render_balls(
 
 pub fn handle_mouse_clicks(
     mouse_input: Res<Input<MouseButton>>,
-    mut game: ResMut<GameScore>,
     mut board: ResMut<Board>,
     mut commands: Commands,
     q_windows: Query<&Window, With<PrimaryWindow>>,
     mut q_balls: Query<(Entity, &mut Coordinates, &BallColor), With<Ball>>,
     mut ev_spawn_balls: EventWriter<SpawnBallsEvent>,
+    mut ev_inc_score: EventWriter<IncrementCurrentGameScore>,
 ) {
     let win = q_windows.get_single().expect("no primary window");
     // let mut board = query_board.get_single().expect("no board");
@@ -121,7 +123,7 @@ pub fn handle_mouse_clicks(
 
                             for line in despawned_balls {
                                 // set game score
-                                game.current_score += line.len() as u32 * 2;
+                                ev_inc_score.send(IncrementCurrentGameScore(line.len() as u32 * 2));
 
                                 for coord in line {
                                     let ball = q_balls

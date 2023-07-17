@@ -1,7 +1,9 @@
 use bevy::prelude::*;
 
-use crate::components::BallColor;
-use crate::resources::*;
+use super::ball::BallAssets;
+use super::ball::BallColor;
+use super::board::Board;
+use super::board::BoardAssets;
 use crate::GameState;
 
 pub struct NextBallsPlugin;

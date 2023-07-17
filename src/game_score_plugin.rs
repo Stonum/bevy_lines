@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
-use crate::resources::Board;
+use crate::board_plugin::board::Board;
+use crate::events::IncrementCurrentGameScore;
 
 pub struct GameScorePlugin;
 
@@ -20,6 +21,7 @@ impl Plugin for GameScorePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<GameScore>()
             .add_startup_system(spawn_score_fields)
+            .add_system(game_score_system)
             .add_system(render_score_text);
     }
 }
@@ -71,7 +73,7 @@ fn spawn_score_fields(
     ));
 }
 
-pub fn render_score_text(
+fn render_score_text(
     game: Res<GameScore>,
     mut q_curr_score: Query<&mut Text, With<CurrentScore>>,
     mut q_best_score: Query<&mut Text, (With<BestScore>, Without<CurrentScore>)>,
@@ -83,5 +85,14 @@ pub fn render_score_text(
         for mut text in &mut q_best_score {
             text.sections[0].value = format!("{:0>5}", game.best_score);
         }
+    }
+}
+
+fn game_score_system(
+    mut game: ResMut<GameScore>,
+    mut ev_inc: EventReader<IncrementCurrentGameScore>,
+) {
+    for ev in ev_inc.iter() {
+        game.current_score += ev.0;
     }
 }

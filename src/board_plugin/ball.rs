@@ -1,12 +1,5 @@
 use bevy::prelude::*;
-#[cfg(feature = "debug")]
-use bevy_inspector_egui::prelude::*;
 use rand::prelude::*;
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Component)]
-#[cfg_attr(feature = "debug", derive(Reflect, InspectorOptions))]
-#[cfg_attr(feature = "debug", reflect(InspectorOptions))]
-pub struct Coordinates(pub u8, pub u8);
 
 #[derive(Debug, Component)]
 #[cfg_attr(feature = "debug", derive(Reflect, InspectorOptions))]
@@ -49,6 +42,23 @@ impl BallColor {
             BallColor::Purple => Color::hex("d71fda").unwrap(),
             BallColor::Brown => Color::hex("b97a56").unwrap(),
             BallColor::Yellow => Color::hex("fff200").unwrap(),
+        }
+    }
+}
+
+#[derive(Resource)]
+pub struct BallAssets {
+    pub texture: Handle<Image>,
+}
+
+impl FromWorld for BallAssets {
+    fn from_world(world: &mut World) -> Self {
+        // You have full access to anything in the ECS from here.
+        // For instance, you can mutate other resources:
+        let asset_server = world.get_resource::<AssetServer>().unwrap();
+
+        BallAssets {
+            texture: asset_server.load("ball.png"),
         }
     }
 }

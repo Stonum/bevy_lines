@@ -2,45 +2,9 @@ use bevy::prelude::*;
 use rand::prelude::*;
 use std::collections::HashMap;
 
-use crate::components::*;
-
-#[derive(Resource)]
-pub struct BallAssets {
-    pub texture: Handle<Image>,
-}
-
-impl FromWorld for BallAssets {
-    fn from_world(world: &mut World) -> Self {
-        // You have full access to anything in the ECS from here.
-        // For instance, you can mutate other resources:
-        let asset_server = world.get_resource::<AssetServer>().unwrap();
-
-        BallAssets {
-            texture: asset_server.load("ball.png"),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct BoardOptions {
-    pub tile_size: f32,
-    pub tile_padding: f32,
-    pub tile_count: u8,
-    pub ball_size: f32,
-    pub mon_balls_on_line: usize,
-}
-
-impl Default for BoardOptions {
-    fn default() -> Self {
-        Self {
-            tile_size: 45.0,
-            tile_padding: 5.0,
-            tile_count: 9,
-            ball_size: 35.0,
-            mon_balls_on_line: 5,
-        }
-    }
-}
+use super::ball::BallColor;
+use super::BoardOptions;
+use super::Coordinates;
 
 #[derive(Resource)]
 pub struct BoardAssets {
@@ -113,10 +77,10 @@ impl Board {
                     rev_diagonal.push(Coordinates(row as u8, col as u8));
                 }
             }
-            if diagonal.len() >= self.options.mon_balls_on_line {
+            if diagonal.len() >= self.options.min_balls_on_line {
                 lines.push(diagonal);
             }
-            if rev_diagonal.len() >= self.options.mon_balls_on_line {
+            if rev_diagonal.len() >= self.options.min_balls_on_line {
                 lines.push(rev_diagonal);
             }
         }
