@@ -62,3 +62,19 @@ impl FromWorld for BallAssets {
         }
     }
 }
+
+#[derive(Component, Default)]
+pub enum BallAnimationState {
+    #[default]
+    Up,
+    Down,
+}
+
+#[derive(Component, Deref, DerefMut)]
+pub struct BallAnimattionTimer(pub Timer);
+
+impl Default for BallAnimattionTimer {
+    fn default() -> Self {
+        Self(Timer::from_seconds(0.19, TimerMode::Repeating))
+    }
+}

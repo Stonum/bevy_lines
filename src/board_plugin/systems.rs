@@ -15,6 +15,7 @@ pub fn spawn_board(
     board_assets: Res<BoardAssets>,
     ball_assets: Res<BallAssets>,
     mut commands: Commands,
+    mut ev_spawn_balls: EventWriter<SpawnNewBallEvent>,
 ) {
     let entity = commands
         .spawn((SpriteBundle {
@@ -43,34 +44,19 @@ pub fn spawn_board(
 
             // spawn startup balls
             for _ in 0..3 {
-                let coord = board.get_free_tile().unwrap();
                 let ball_color = BallColor::new();
-
-                board.tiles_map.insert(coord, Some(ball_color));
-
-                parent
-                    .spawn(SpriteBundle {
-                        texture: ball_assets.texture.clone(),
-                        sprite: Sprite {
-                            custom_size: Some(Vec2::splat(board.options.ball_size)),
-                            color: ball_color.get(),
-                            ..default()
-                        },
-                        transform: Transform::from_translation(
-                            board.phisical_pos(&coord).extend(2.),
-                        ),
-                        ..default()
-                    })
-                    .insert(Name::from("Ball"))
-                    .insert(Ball)
-                    .insert(ball_color)
-                    .insert(coord);
+                ev_spawn_balls.send(SpawnNewBallEvent(ball_color));
             }
         })
         .insert(Name::new("Board"))
         .id();
 
     board.entity = Some(entity);
+}
+
+pub fn spawn_animation_timer(mut commands: Commands) {
+    // timer for animate active ball
+    commands.spawn(BallAnimattionTimer::default());
 }
 
 pub fn render_balls(
@@ -91,7 +77,9 @@ pub fn handle_mouse_clicks(
     mut commands: Commands,
     q_windows: Query<&Window, With<PrimaryWindow>>,
     mut q_balls: Query<(Entity, &mut Coordinates, &BallColor), With<Ball>>,
-    mut ev_spawn_balls: EventWriter<SpawnBallsEvent>,
+    query_next_ball: Query<&mut BallColor, (With<NextBall>, Without<Ball>)>,
+    mut ev_spawn_balls: EventWriter<SpawnNewBallEvent>,
+    mut ev_change_next: EventWriter<ChangeNextBallsEvent>,
     mut ev_inc_score: EventWriter<IncrementCurrentGameScore>,
 ) {
     let win = q_windows.get_single().expect("no primary window");
@@ -102,7 +90,14 @@ pub fn handle_mouse_clicks(
             if let Some(coord) = board.logical_pos(win, position) {
                 for (entity, ball_coord, _ball_color) in q_balls.iter() {
                     if *ball_coord == coord {
+                        if let Some(entity) = board.active_ball {
+                            commands.entity(entity).remove::<BallAnimationState>();
+                            board.active_ball = None;
+                        }
                         board.active_ball = Some(entity);
+                        commands
+                            .entity(entity)
+                            .insert(BallAnimationState::default());
                     }
                 }
                 // move ball to new position
@@ -114,7 +109,10 @@ pub fn handle_mouse_clicks(
                             // move ball to coord
                             board.tiles_map.insert(coord, Some(*color));
 
-                            board.active_ball = None;
+                            if let Some(entity) = board.active_ball {
+                                commands.entity(entity).remove::<BallAnimationState>();
+                                board.active_ball = None;
+                            }
 
                             coordinates.0 = coord.0;
                             coordinates.1 = coord.1;
@@ -137,8 +135,12 @@ pub fn handle_mouse_clicks(
                                 }
                             }
 
-                            // spawn new balls
-                            ev_spawn_balls.send(SpawnBallsEvent);
+                            for color in query_next_ball.iter() {
+                                // spawn new balls
+                                ev_spawn_balls.send(SpawnNewBallEvent(*color));
+                            }
+                            // change next colors
+                            ev_change_next.send(ChangeNextBallsEvent);
                         }
                     }
                 }
@@ -147,50 +149,60 @@ pub fn handle_mouse_clicks(
     }
 }
 
-pub fn animate_ball_system(mut _commands: Commands, board: Res<Board>) {
-    if let Some(_ball) = board.active_ball {
-
-        // commands.entity(ball)
+pub fn animate_ball_system(
+    time: Res<Time>,
+    mut query_animated_ball: Query<(&mut Transform, &mut BallAnimationState)>,
+    mut query: Query<&mut BallAnimattionTimer>,
+) {
+    for (mut transform, mut state) in query_animated_ball.iter_mut() {
+        for mut timer in &mut query {
+            if timer.tick(time.delta()).just_finished() {
+                match *state {
+                    BallAnimationState::Up => {
+                        transform.translation.y += 4.;
+                        *state = BallAnimationState::Down;
+                    }
+                    BallAnimationState::Down => {
+                        transform.translation.y -= 4.;
+                        *state = BallAnimationState::Up;
+                    }
+                }
+            }
+        }
     }
 }
 
-pub fn spawn_new_balls(
+pub fn spawn_new_ball(
     mut board: ResMut<Board>,
     ball_assets: Res<BallAssets>,
     mut commands: Commands,
-    query_next_ball: Query<&mut BallColor, With<NextBall>>,
-    mut ev_spawn_balls: EventReader<SpawnBallsEvent>,
-    mut ev_change_next: EventWriter<ChangeNextBalls>,
+    mut ev_spawn_balls: EventReader<SpawnNewBallEvent>,
 ) {
-    for _ in ev_spawn_balls.iter() {
-        info!("Spawn new balls");
+    for ev in ev_spawn_balls.iter() {
         if let Some(entity) = board.entity {
-            for color in query_next_ball.iter() {
-                let coord = board.get_free_tile().unwrap();
-                board.tiles_map.insert(coord, Some(*color));
+            let coord = board.get_free_tile().unwrap();
+            let color = ev.0;
+            board.tiles_map.insert(coord, Some(color));
 
-                commands.entity(entity).with_children(|parent| {
-                    parent
-                        .spawn(SpriteBundle {
-                            texture: ball_assets.texture.clone(),
-                            sprite: Sprite {
-                                custom_size: Some(Vec2::splat(board.options.ball_size)),
-                                color: color.get(),
-                                ..default()
-                            },
-                            transform: Transform::from_translation(
-                                board.phisical_pos(&coord).extend(2.),
-                            ),
+            commands.entity(entity).with_children(|parent| {
+                parent
+                    .spawn(SpriteBundle {
+                        texture: ball_assets.texture.clone(),
+                        sprite: Sprite {
+                            custom_size: Some(Vec2::splat(board.options.ball_size)),
+                            color: color.get(),
                             ..default()
-                        })
-                        .insert(Name::from("Ball"))
-                        .insert(Ball)
-                        .insert(*color)
-                        .insert(coord);
-                });
-            }
-            // change next colors
-            ev_change_next.send(ChangeNextBalls);
+                        },
+                        transform: Transform::from_translation(
+                            board.phisical_pos(&coord).extend(2.),
+                        ),
+                        ..default()
+                    })
+                    .insert(Name::from("Ball"))
+                    .insert(Ball)
+                    .insert(color)
+                    .insert(coord);
+            });
         }
     }
 }

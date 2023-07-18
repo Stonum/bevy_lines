@@ -25,12 +25,15 @@ impl Plugin for BoardPlugin {
 
         app.add_plugin(NextBallsPlugin);
 
-        app.add_event::<SpawnBallsEvent>();
+        app.add_event::<SpawnNewBallEvent>();
+        app.add_event::<ChangeNextBallsEvent>();
 
         app.add_startup_system(spawn_board)
+            .add_startup_system(spawn_animation_timer)
             .add_system(render_balls)
             .add_system(animate_ball_system)
-            .add_systems((handle_mouse_clicks, spawn_new_balls).chain());
+            .add_system(spawn_new_ball)
+            .add_system(handle_mouse_clicks);
     }
 }
 
