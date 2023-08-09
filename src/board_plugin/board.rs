@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use rand::prelude::*;
 use std::collections::HashMap;
 
-use super::ball::BallColor;
+use super::ball::{BallColor, BallEntity};
 use super::BoardOptions;
 use super::Coordinates;
 
@@ -25,7 +25,7 @@ impl Default for BoardAssets {
 pub struct Board {
     pub entity: Option<Entity>,
     pub options: BoardOptions,
-    pub tiles_map: HashMap<Coordinates, Option<BallColor>>,
+    pub tiles_map: HashMap<Coordinates, Option<BallEntity>>,
     pub phisical_size: f32,
     pub active_ball: Option<Entity>,
 }
@@ -114,8 +114,8 @@ impl Board {
         let free_tiles: Vec<&Coordinates> = self
             .tiles_map
             .iter()
-            .filter(|(_coord, color)| color.is_none())
-            .map(|(coord, _color)| coord)
+            .filter(|(_coord, ball)| ball.is_none())
+            .map(|(coord, _ball)| coord)
             .collect();
 
         if let Some(coord) = free_tiles.choose(&mut rand::thread_rng()) {
@@ -158,19 +158,19 @@ impl Board {
             acc.clear();
 
             for coord in line {
-                let color = self.tiles_map.get(&coord).unwrap();
+                let ball = self.tiles_map.get(&coord).unwrap();
 
-                match color {
-                    Some(color) => {
-                        if last_color.is_some() && last_color != Some(*color) {
+                match ball {
+                    Some(ball) => {
+                        if last_color.is_some() && last_color != Some(ball.color) {
                             last_color = None;
                             if acc.len() >= 5 {
                                 result.push(acc.clone());
                             }
                             acc.clear();
                         }
-                        if last_color.is_none() || last_color == Some(*color) {
-                            last_color = Some(*color);
+                        if last_color.is_none() || last_color == Some(ball.color) {
+                            last_color = Some(ball.color);
                             acc.push(coord);
                         }
                     }

@@ -7,13 +7,12 @@ use crate::events::IncrementCurrentGameScore;
 use super::ball::*;
 use super::board::*;
 use super::events::*;
-use super::next_balls::*;
+use super::next_balls_plugin::*;
 use super::Coordinates;
 
 pub fn spawn_board(
     mut board: ResMut<Board>,
     board_assets: Res<BoardAssets>,
-    ball_assets: Res<BallAssets>,
     mut commands: Commands,
     mut ev_spawn_balls: EventWriter<SpawnNewBallEvent>,
 ) {
@@ -64,7 +63,6 @@ pub fn render_balls(
     mut query: Query<(&Coordinates, &mut Transform), (Changed<Coordinates>, With<Ball>)>,
 ) {
     for (coord, mut transform) in query.iter_mut() {
-        info!("Move ball to {coord:?}");
         let Vec2 { x, y } = board.phisical_pos(&coord);
         transform.translation.x = x;
         transform.translation.y = y;
@@ -77,13 +75,12 @@ pub fn handle_mouse_clicks(
     mut commands: Commands,
     q_windows: Query<&Window, With<PrimaryWindow>>,
     mut q_balls: Query<(Entity, &mut Coordinates, &BallColor), With<Ball>>,
-    query_next_ball: Query<&mut BallColor, (With<NextBall>, Without<Ball>)>,
+    query_next_ball: Query<&NextBall, With<NextBall>>,
     mut ev_spawn_balls: EventWriter<SpawnNewBallEvent>,
     mut ev_change_next: EventWriter<ChangeNextBallsEvent>,
     mut ev_inc_score: EventWriter<IncrementCurrentGameScore>,
 ) {
     let win = q_windows.get_single().expect("no primary window");
-    // let mut board = query_board.get_single().expect("no board");
 
     if mouse_input.just_pressed(MouseButton::Left) {
         if let Some(position) = win.cursor_position() {
@@ -102,18 +99,20 @@ pub fn handle_mouse_clicks(
                 }
                 // move ball to new position
                 if let Some(ball) = board.active_ball {
-                    if let Ok((_entity, mut coordinates, color)) = q_balls.get_mut(ball) {
+                    if let Ok((_entity, mut coordinates, _color)) = q_balls.get_mut(ball) {
                         if coordinates.partial_cmp(&coord) != Some(Ordering::Equal) {
-                            // remove ball from coordinates
-                            board.tiles_map.insert(*coordinates, None);
-                            // move ball to coord
-                            board.tiles_map.insert(coord, Some(*color));
+                            // remove ball from old coordinates
+                            let ball_entity =
+                                board.tiles_map.insert(*coordinates, None).unwrap_or(None);
+                            // insert ball to new coordinates
+                            board.tiles_map.insert(coord, ball_entity);
 
                             if let Some(entity) = board.active_ball {
                                 commands.entity(entity).remove::<BallAnimationState>();
                                 board.active_ball = None;
                             }
 
+                            // change coordinates
                             coordinates.0 = coord.0;
                             coordinates.1 = coord.1;
 
@@ -123,21 +122,18 @@ pub fn handle_mouse_clicks(
                                 // set game score
                                 ev_inc_score.send(IncrementCurrentGameScore(line.len() as u32 * 2));
 
-                                for coord in line {
-                                    let ball = q_balls
-                                        .iter_mut()
-                                        .find(|(_, ball_coord, ..)| (*ball_coord).clone() == coord);
-
-                                    if let Some((entity, ..)) = ball {
-                                        board.tiles_map.insert(coord, None);
-                                        commands.entity(entity).despawn_recursive();
+                                for coordinates in line {
+                                    let ball =
+                                        board.tiles_map.insert(coordinates, None).unwrap_or(None);
+                                    if let Some(ball) = ball {
+                                        commands.entity(ball.entity).despawn_recursive();
                                     }
                                 }
                             }
 
-                            for color in query_next_ball.iter() {
+                            for ball in query_next_ball.iter() {
                                 // spawn new balls
-                                ev_spawn_balls.send(SpawnNewBallEvent(*color));
+                                ev_spawn_balls.send(SpawnNewBallEvent(ball.color));
                             }
                             // change next colors
                             ev_change_next.send(ChangeNextBallsEvent);
@@ -182,10 +178,9 @@ pub fn spawn_new_ball(
         if let Some(entity) = board.entity {
             let coord = board.get_free_tile().unwrap();
             let color = ev.0;
-            board.tiles_map.insert(coord, Some(color));
 
             commands.entity(entity).with_children(|parent| {
-                parent
+                let entity = parent
                     .spawn(SpriteBundle {
                         texture: ball_assets.texture.clone(),
                         sprite: Sprite {
@@ -201,7 +196,12 @@ pub fn spawn_new_ball(
                     .insert(Name::from("Ball"))
                     .insert(Ball)
                     .insert(color)
-                    .insert(coord);
+                    .insert(coord)
+                    .id();
+
+                board
+                    .tiles_map
+                    .insert(coord, Some(BallEntity::new(color, entity)));
             });
         }
     }

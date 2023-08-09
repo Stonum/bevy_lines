@@ -13,6 +13,7 @@ impl Plugin for NextBallsPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(spawn_next_board)
             .add_system(spawn_next_balls.in_schedule(OnEnter(GameState::Playing)))
+            .add_system(render_next_color.in_set(OnUpdate(GameState::Playing)))
             .add_system(change_next_color.in_set(OnUpdate(GameState::Playing)));
     }
 }
@@ -24,7 +25,20 @@ struct NextBoard;
 struct NextTile;
 
 #[derive(Debug, Component)]
-pub struct NextBall;
+pub struct NextBall {
+    pub color: BallColor,
+}
+
+impl NextBall {
+    fn new() -> Self {
+        Self {
+            color: BallColor::new(),
+        }
+    }
+    fn change_color(&mut self) {
+        self.color = BallColor::new()
+    }
+}
 
 fn spawn_next_board(board: Res<Board>, board_assets: Res<BoardAssets>, mut commands: Commands) {
     commands
@@ -77,34 +91,35 @@ fn spawn_next_balls(
     q_next_tiles: Query<Entity, With<NextTile>>,
 ) {
     for entity in q_next_tiles.iter() {
-        let ball_color = BallColor::new();
-
         commands.entity(entity).with_children(|parent| {
             parent.spawn((
                 SpriteBundle {
                     texture: ball_assets.texture.clone(),
                     sprite: Sprite {
                         custom_size: Some(Vec2::splat(board.options.ball_size)),
-                        color: ball_color.get(),
                         ..default()
                     },
                     ..default()
                 },
-                NextBall,
-                ball_color,
+                NextBall::new(),
             ));
         });
     }
 }
 
+fn render_next_color(mut query_next_ball: Query<(&NextBall, &mut Sprite), Changed<NextBall>>) {
+    for (ball, mut sprite) in query_next_ball.iter_mut() {
+        sprite.color = ball.color.get();
+    }
+}
+
 fn change_next_color(
-    mut query_next_ball: Query<(&mut BallColor, &mut Sprite), With<NextBall>>,
+    mut query_next_ball: Query<&mut NextBall, With<NextBall>>,
     mut ev_change_next: EventReader<ChangeNextBallsEvent>,
 ) {
     for _ in ev_change_next.iter() {
-        for (mut color, mut sprite) in query_next_ball.iter_mut() {
-            *color = BallColor::new();
-            sprite.color = color.get();
+        for mut ball in query_next_ball.iter_mut() {
+            ball.change_color();
         }
     }
 }

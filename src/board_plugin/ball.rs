@@ -2,13 +2,21 @@ use bevy::prelude::*;
 use rand::prelude::*;
 
 #[derive(Debug, Component)]
-#[cfg_attr(feature = "debug", derive(Reflect, InspectorOptions))]
-#[cfg_attr(feature = "debug", reflect(InspectorOptions))]
 pub struct Ball;
 
+#[derive(Debug, Component)]
+pub struct BallEntity {
+    pub color: BallColor,
+    pub entity: Entity,
+}
+
+impl BallEntity {
+    pub fn new(color: BallColor, entity: Entity) -> Self {
+        Self { color, entity }
+    }
+}
+
 #[derive(Debug, Component, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "debug", derive(Reflect, InspectorOptions))]
-#[cfg_attr(feature = "debug", reflect(InspectorOptions))]
 pub enum BallColor {
     Red,
     Blue,

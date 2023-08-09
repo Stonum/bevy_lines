@@ -1,7 +1,7 @@
 mod ball;
 pub mod board;
 mod events;
-mod next_balls;
+mod next_balls_plugin;
 mod systems;
 
 use bevy::prelude::*;
@@ -10,7 +10,7 @@ use ball::BallAssets;
 use board::Board;
 use board::BoardAssets;
 
-use next_balls::NextBallsPlugin;
+use next_balls_plugin::NextBallsPlugin;
 
 use events::*;
 use systems::*;
