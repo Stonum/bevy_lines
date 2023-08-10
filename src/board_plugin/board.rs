@@ -1,6 +1,7 @@
+use bevy::ecs::query;
 use bevy::prelude::*;
 use rand::prelude::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet, VecDeque};
 
 use super::ball::{BallColor, BallEntity};
 use super::BoardOptions;
@@ -192,5 +193,80 @@ impl Board {
         }
 
         result
+    }
+
+    fn get_neighbors(&self, coordinates: &Coordinates) -> Vec<Coordinates> {
+        let mut neighbors = Vec::new();
+        let count = self.options.tile_count;
+
+        let row = coordinates.0;
+        let col = coordinates.1;
+
+        if row > 0 {
+            neighbors.push(Coordinates(row - 1, col));
+        }
+        if row < count - 1 {
+            neighbors.push(Coordinates(row + 1, col));
+        }
+        if col > 0 {
+            neighbors.push(Coordinates(row, col - 1));
+        }
+        if col < count - 1 {
+            neighbors.push(Coordinates(row, col + 1));
+        }
+
+        neighbors
+    }
+
+    pub fn get_path_to_move(
+        &self,
+        from: &Coordinates,
+        to: &Coordinates,
+    ) -> Option<Vec<Coordinates>> {
+        let count = self.options.tile_count as i32;
+
+        let mut visited = HashSet::new();
+        let mut prev = vec![vec![Coordinates(0, 0); count as usize]; count as usize];
+        let mut queue = VecDeque::new();
+
+        let empty_tail: Option<BallEntity> = None;
+
+        visited.insert(*from);
+        queue.push_back(*from);
+
+        while let Some(coord) = queue.pop_front() {
+            if coord == *to {
+                let mut path = Vec::new();
+                let mut current = *to;
+
+                while current != *from {
+                    path.push(current);
+                    current = prev[current.0 as usize][current.1 as usize];
+                }
+
+                path.push(*from);
+                path.reverse();
+
+                return Some(path);
+            }
+
+            let neighbors = self.get_neighbors(&coord);
+
+            for next_coord in neighbors {
+                if self
+                    .tiles_map
+                    .get(&next_coord)
+                    .unwrap_or(&empty_tail)
+                    .is_none()
+                    && !visited.contains(&next_coord)
+                {
+                    visited.insert(next_coord);
+                    prev[next_coord.0 as usize][next_coord.1 as usize] = coord;
+                    queue.push_back(next_coord);
+                }
+            }
+        }
+
+        None
     }
 }

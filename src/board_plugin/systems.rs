@@ -84,9 +84,9 @@ pub fn handle_mouse_clicks(
 
     if mouse_input.just_pressed(MouseButton::Left) {
         if let Some(position) = win.cursor_position() {
-            if let Some(coord) = board.logical_pos(win, position) {
+            if let Some(next_coord) = board.logical_pos(win, position) {
                 for (entity, ball_coord, _ball_color) in q_balls.iter() {
-                    if *ball_coord == coord {
+                    if *ball_coord == next_coord {
                         if let Some(entity) = board.active_ball {
                             commands.entity(entity).remove::<BallAnimationState>();
                             board.active_ball = None;
@@ -100,12 +100,14 @@ pub fn handle_mouse_clicks(
                 // move ball to new position
                 if let Some(ball) = board.active_ball {
                     if let Ok((_entity, mut coordinates, _color)) = q_balls.get_mut(ball) {
-                        if coordinates.partial_cmp(&coord) != Some(Ordering::Equal) {
+                        if coordinates.partial_cmp(&next_coord) != Some(Ordering::Equal)
+                            && board.get_path_to_move(&coordinates, &next_coord).is_some()
+                        {
                             // remove ball from old coordinates
                             let ball_entity =
                                 board.tiles_map.insert(*coordinates, None).unwrap_or(None);
                             // insert ball to new coordinates
-                            board.tiles_map.insert(coord, ball_entity);
+                            board.tiles_map.insert(next_coord, ball_entity);
 
                             if let Some(entity) = board.active_ball {
                                 commands.entity(entity).remove::<BallAnimationState>();
@@ -113,8 +115,8 @@ pub fn handle_mouse_clicks(
                             }
 
                             // change coordinates
-                            coordinates.0 = coord.0;
-                            coordinates.1 = coord.1;
+                            coordinates.0 = next_coord.0;
+                            coordinates.1 = next_coord.1;
 
                             let despawned_balls = board.get_balls_for_despawn();
 
