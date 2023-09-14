@@ -39,7 +39,7 @@ fn spawn_score_fields(
         color: Color::GREEN,
     };
 
-    let position_y = board.phisical_size / 2. + board.options.tile_size;
+    let position_y = board.physical_size / 2. + board.options.tile_size;
     let position_x = board.options.tile_size * 4.;
 
     commands.spawn((

@@ -54,7 +54,7 @@ fn spawn_next_board(board: Res<Board>, board_assets: Res<BoardAssets>, mut comma
                 },
                 transform: Transform::from_xyz(
                     0.,
-                    board.phisical_size / 2. + board.options.tile_size,
+                    board.physical_size / 2. + board.options.tile_size,
                     0.,
                 ),
                 ..default()

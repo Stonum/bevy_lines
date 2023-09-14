@@ -20,14 +20,14 @@ pub fn spawn_board(
         .spawn((SpriteBundle {
             sprite: Sprite {
                 color: board_assets.board_color,
-                custom_size: Some(Vec2::splat(board.phisical_size)),
+                custom_size: Some(Vec2::splat(board.physical_size)),
                 ..default()
             },
             ..default()
         },))
         .with_children(|parent| {
             for coord in board.tiles_map.keys() {
-                let position = board.phisical_pos(&coord);
+                let position = board.physical_post(&coord);
                 parent.spawn(SpriteBundle {
                     sprite: Sprite {
                         color: board_assets.tile_color,
@@ -63,7 +63,7 @@ pub fn render_balls(
     mut query: Query<(&Coordinates, &mut Transform), (Changed<Coordinates>, With<Ball>)>,
 ) {
     for (coord, mut transform) in query.iter_mut() {
-        let Vec2 { x, y } = board.phisical_pos(&coord);
+        let Vec2 { x, y } = board.physical_post(&coord);
         transform.translation.x = x;
         transform.translation.y = y;
     }
@@ -191,7 +191,7 @@ pub fn spawn_new_ball(
                             ..default()
                         },
                         transform: Transform::from_translation(
-                            board.phisical_pos(&coord).extend(2.),
+                            board.physical_post(&coord).extend(2.),
                         ),
                         ..default()
                     })

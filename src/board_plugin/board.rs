@@ -1,9 +1,8 @@
-use bevy::ecs::query;
 use bevy::prelude::*;
 use rand::prelude::*;
 use std::collections::{HashMap, HashSet, VecDeque};
 
-use super::ball::{BallColor, BallEntity};
+use super::ball::BallEntity;
 use super::BoardOptions;
 use super::Coordinates;
 
@@ -27,7 +26,7 @@ pub struct Board {
     pub entity: Option<Entity>,
     pub options: BoardOptions,
     pub tiles_map: HashMap<Coordinates, Option<BallEntity>>,
-    pub phisical_size: f32,
+    pub physical_size: f32,
     pub active_ball: Option<Entity>,
 }
 
@@ -45,7 +44,7 @@ impl Default for Board {
         Self {
             entity: None,
             options,
-            phisical_size: options.tile_size * options.tile_count as f32,
+            physical_size: options.tile_size * options.tile_count as f32,
             active_ball: None,
             tiles_map: tiles,
         }
@@ -53,7 +52,7 @@ impl Default for Board {
 }
 
 impl Board {
-    // get all lines for board. horisontal, vertical and diagonal
+    // get all lines for board. horizontal, vertical and diagonal
     fn get_lines(&self) -> Vec<Vec<Coordinates>> {
         let mut lines: Vec<_> = vec![];
         let count = self.options.tile_count as i32;
@@ -97,7 +96,7 @@ impl Board {
             lines.push(line);
         }
 
-        // horisontal lines
+        // horizontal lines
         for y in 0..self.options.tile_count {
             let mut line = vec![];
 
@@ -125,8 +124,8 @@ impl Board {
         None
     }
 
-    pub fn phisical_pos(&self, coord: &Coordinates) -> Vec2 {
-        let offset = -self.phisical_size / 2.;
+    pub fn physical_post(&self, coord: &Coordinates) -> Vec2 {
+        let offset = -self.physical_size / 2.;
         Vec2::new(
             (coord.0 as f32 * self.options.tile_size) + (self.options.tile_size / 2.) + offset,
             -((coord.1 as f32 * self.options.tile_size) + (self.options.tile_size / 2.) + offset),
@@ -136,7 +135,7 @@ impl Board {
     pub fn logical_pos(&self, win: &Window, pos: Vec2) -> Option<Coordinates> {
         let window_size = Vec2::new(win.width(), win.height());
         let position = pos - window_size / 2.;
-        let size = self.phisical_size / 2.;
+        let size = self.physical_size / 2.;
 
         if size < position.x.abs() || size < position.y.abs() {
             return None;
