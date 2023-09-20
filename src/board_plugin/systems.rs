@@ -3,6 +3,7 @@ use bevy::window::PrimaryWindow;
 use std::cmp::Ordering;
 
 use crate::events::IncrementCurrentGameScore;
+use crate::GameState;
 
 use super::ball::*;
 use super::board::*;
@@ -17,6 +18,7 @@ pub fn spawn_board(
     mut ev_spawn_balls: EventWriter<SpawnNewBallEvent>,
 ) {
     let entity = commands
+        // board background
         .spawn((SpriteBundle {
             sprite: Sprite {
                 color: board_assets.board_color,
@@ -25,9 +27,10 @@ pub fn spawn_board(
             },
             ..default()
         },))
+        // board tiles
         .with_children(|parent| {
             for coord in board.tiles_map.keys() {
-                let position = board.physical_post(&coord);
+                let position = board.physical_pos(&coord);
                 parent.spawn(SpriteBundle {
                     sprite: Sprite {
                         color: board_assets.tile_color,
@@ -55,7 +58,7 @@ pub fn spawn_board(
 
 pub fn spawn_animation_timer(mut commands: Commands) {
     // timer for animate active ball
-    commands.spawn(BallAnimattionTimer::default());
+    commands.spawn(BallAnimationTimer::default());
 }
 
 pub fn render_balls(
@@ -63,7 +66,7 @@ pub fn render_balls(
     mut query: Query<(&Coordinates, &mut Transform), (Changed<Coordinates>, With<Ball>)>,
 ) {
     for (coord, mut transform) in query.iter_mut() {
-        let Vec2 { x, y } = board.physical_post(&coord);
+        let Vec2 { x, y } = board.physical_pos(&coord);
         transform.translation.x = x;
         transform.translation.y = y;
     }
@@ -150,7 +153,7 @@ pub fn handle_mouse_clicks(
 pub fn animate_ball_system(
     time: Res<Time>,
     mut query_animated_ball: Query<(&mut Transform, &mut BallAnimationState)>,
-    mut query: Query<&mut BallAnimattionTimer>,
+    mut query: Query<&mut BallAnimationTimer>,
 ) {
     for (mut transform, mut state) in query_animated_ball.iter_mut() {
         for mut timer in &mut query {
@@ -175,10 +178,17 @@ pub fn spawn_new_ball(
     ball_assets: Res<BallAssets>,
     mut commands: Commands,
     mut ev_spawn_balls: EventReader<SpawnNewBallEvent>,
+    mut game_state: ResMut<NextState<GameState>>,
 ) {
     for ev in ev_spawn_balls.iter() {
         if let Some(entity) = board.entity {
-            let coord = board.get_free_tile().unwrap();
+            let coord = match board.get_free_tile() {
+                Some(free_coordinates) => free_coordinates,
+                None => {
+                    game_state.set(GameState::GameOver);
+                    return;
+                }
+            };
             let color = ev.0;
 
             commands.entity(entity).with_children(|parent| {
@@ -191,7 +201,7 @@ pub fn spawn_new_ball(
                             ..default()
                         },
                         transform: Transform::from_translation(
-                            board.physical_post(&coord).extend(2.),
+                            board.physical_pos(&coord).extend(2.),
                         ),
                         ..default()
                     })
@@ -206,5 +216,15 @@ pub fn spawn_new_ball(
                     .insert(coord, Some(BallEntity::new(color, entity)));
             });
         }
+    }
+    if board.get_free_tile().is_none() {
+        game_state.set(GameState::GameOver);
+    };
+}
+
+pub fn despawn_board(mut commands: Commands, mut board: ResMut<Board>) {
+    if let Some(entity) = board.entity {
+        commands.entity(entity).despawn_recursive();
+        board.entity = None;
     }
 }

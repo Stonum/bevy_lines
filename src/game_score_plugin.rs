@@ -20,9 +20,8 @@ pub struct BestScore;
 impl Plugin for GameScorePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<GameScore>()
-            .add_startup_system(spawn_score_fields)
-            .add_system(game_score_system)
-            .add_system(render_score_text);
+            .add_systems(Startup, spawn_score_fields)
+            .add_systems(Update, (game_score_system, render_score_text));
     }
 }
 

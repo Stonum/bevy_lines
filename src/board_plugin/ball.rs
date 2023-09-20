@@ -79,9 +79,9 @@ pub enum BallAnimationState {
 }
 
 #[derive(Component, Deref, DerefMut)]
-pub struct BallAnimattionTimer(pub Timer);
+pub struct BallAnimationTimer(pub Timer);
 
-impl Default for BallAnimattionTimer {
+impl Default for BallAnimationTimer {
     fn default() -> Self {
         Self(Timer::from_seconds(0.19, TimerMode::Repeating))
     }

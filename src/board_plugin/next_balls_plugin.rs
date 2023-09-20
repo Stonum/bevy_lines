@@ -11,10 +11,10 @@ pub struct NextBallsPlugin;
 
 impl Plugin for NextBallsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(spawn_next_board)
-            .add_system(spawn_next_balls.in_schedule(OnEnter(GameState::Playing)))
-            .add_system(render_next_color.in_set(OnUpdate(GameState::Playing)))
-            .add_system(change_next_color.in_set(OnUpdate(GameState::Playing)));
+        app.add_systems(Startup, spawn_next_board)
+            .add_systems(OnEnter(GameState::Playing), spawn_next_balls)
+            .add_systems(Update, (render_next_color, change_next_color))
+            .add_systems(OnExit(GameState::Playing), despawn_next_balls);
     }
 }
 
@@ -121,5 +121,11 @@ fn change_next_color(
         for mut ball in query_next_ball.iter_mut() {
             ball.change_color();
         }
+    }
+}
+
+fn despawn_next_balls(mut commands: Commands, q_next_ball: Query<Entity, With<NextBall>>) {
+    for entity in q_next_ball.iter() {
+        commands.entity(entity).despawn_recursive();
     }
 }

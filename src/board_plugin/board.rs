@@ -124,7 +124,7 @@ impl Board {
         None
     }
 
-    pub fn physical_post(&self, coord: &Coordinates) -> Vec2 {
+    pub fn physical_pos(&self, coord: &Coordinates) -> Vec2 {
         let offset = -self.physical_size / 2.;
         Vec2::new(
             (coord.0 as f32 * self.options.tile_size) + (self.options.tile_size / 2.) + offset,
@@ -143,7 +143,7 @@ impl Board {
 
         let coord = Coordinates(
             ((position.x + size) / self.options.tile_size) as u8,
-            ((position.y - size).abs() / self.options.tile_size) as u8,
+            ((position.y + size) / self.options.tile_size) as u8,
         );
         Some(coord)
     }
