@@ -2,6 +2,8 @@ use bevy::prelude::*;
 
 use crate::board_plugin::board::Board;
 use crate::events::IncrementCurrentGameScore;
+use crate::leader_board_plugin::LeaderBoard;
+use crate::GameState;
 
 pub struct GameScorePlugin;
 
@@ -21,6 +23,7 @@ impl Plugin for GameScorePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<GameScore>()
             .add_systems(Startup, spawn_score_fields)
+            .add_systems(OnEnter(GameState::Playing), init_game_score)
             .add_systems(Update, (game_score_system, render_score_text));
     }
 }
@@ -87,11 +90,16 @@ fn render_score_text(
     }
 }
 
+fn init_game_score(mut game_score: ResMut<GameScore>, leaders: Res<LeaderBoard>) {
+    game_score.current_score = 0;
+    if let Some(score) = leaders.get_best_score() {
+        game_score.best_score = score;
+    }
+}
+
 fn game_score_system(
     mut game: ResMut<GameScore>,
     mut ev_inc: EventReader<IncrementCurrentGameScore>,
 ) {
-    for ev in ev_inc.iter() {
-        game.current_score += ev.0;
-    }
+    game.current_score += ev_inc.iter().map(|ev| ev.0).sum::<u32>();
 }

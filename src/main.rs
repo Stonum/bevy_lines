@@ -4,6 +4,7 @@
 mod board_plugin;
 mod events;
 mod game_score_plugin;
+mod leader_board_plugin;
 
 use bevy::prelude::*;
 use bevy_embedded_assets::EmbeddedAssetPlugin;
@@ -11,6 +12,7 @@ use bevy_embedded_assets::EmbeddedAssetPlugin;
 use board_plugin::BoardPlugin;
 use events::*;
 use game_score_plugin::GameScorePlugin;
+use leader_board_plugin::LeaderBoardPlugin;
 
 #[derive(States, Default, Clone, Eq, PartialEq, Debug, Hash)]
 pub enum GameState {
@@ -38,7 +40,7 @@ fn main() {
     app.insert_resource(ClearColor(Color::BLACK));
     app.add_event::<IncrementCurrentGameScore>();
 
-    app.add_plugins((BoardPlugin, GameScorePlugin));
+    app.add_plugins((BoardPlugin, LeaderBoardPlugin, GameScorePlugin));
 
     app.add_systems(Startup, spawn_camera)
         .add_systems(Update, handle_keyboard)
