@@ -226,5 +226,8 @@ pub fn despawn_board(mut commands: Commands, mut board: ResMut<Board>) {
     if let Some(entity) = board.entity {
         commands.entity(entity).despawn_recursive();
         board.entity = None;
+        for (_coord, ball) in board.tiles_map.iter_mut() {
+            *ball = None;
+        }
     }
 }
