@@ -1,0 +1,102 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="utf-8">
+    <title>Lines</title>
+    
+    <style type="text/css">body,
+html {
+   height: 100%;
+}
+
+body {
+   background-color: lightgray;
+   margin: 0;
+   display: flex;
+   justify-content: center;
+   align-items: center;
+}
+
+.game-container {
+   width: 800px;
+   height: 600px;
+   display: flex;
+   justify-content: center;
+   align-items: center;
+}
+
+.lds-dual-ring {
+   display: inline-block;
+   position: absolute;
+   left: 0;
+   right: 0;
+   margin: auto;
+   width: 80px;
+   height: 80px;
+}
+
+.lds-dual-ring:after {
+   content: " ";
+   display: block;
+   width: 64px;
+   height: 64px;
+   border-radius: 50%;
+   border: 6px solid #fff;
+   border-color: #fff transparent #fff transparent;
+   animation: lds-dual-ring 1.2s linear infinite;
+}
+
+@keyframes lds-dual-ring {
+   0% {
+      transform: rotate(0deg);
+   }
+
+   100% {
+      transform: rotate(360deg);
+   }
+}
+
+#bevy {
+   width: 0;
+   height: 0;
+   z-index: 2;
+}</style>
+
+<link rel="preload" href="/lines-adb738acc9dfe957_bg.wasm" as="fetch" type="application/wasm" crossorigin="">
+<link rel="modulepreload" href="/lines-adb738acc9dfe957.js"></head>
+
+<body>
+    <div class="game-container">
+        <!-- <div class="lds-dual-ring"></div> -->
+        <canvas id="bevy">
+            Javascript and support for canvas is required
+        </canvas>
+    </div>
+
+
+<script type="module">import init from '/lines-adb738acc9dfe957.js';init('/lines-adb738acc9dfe957_bg.wasm');</script><script>(function () {
+    var protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    var url = protocol + '//' + window.location.host + '/_trunk/ws';
+    var poll_interval = 5000;
+    var reload_upon_connect = () => {
+        window.setTimeout(
+            () => {
+                // when we successfully reconnect, we'll force a
+                // reload (since we presumably lost connection to
+                // trunk due to it being killed, so it will have
+                // rebuilt on restart)
+                var ws = new WebSocket(url);
+                ws.onopen = () => window.location.reload();
+                ws.onclose = reload_upon_connect;
+            },
+            poll_interval);
+    };
+
+    var ws = new WebSocket(url);
+    ws.onmessage = (ev) => {
+        const msg = JSON.parse(ev.data);
+        if (msg.reload) {
+            window.location.reload();
+        }
+    };
+    ws.onclose = reload_upon_connect;
+})()
+</script></body></html>

@@ -1,6 +1,7 @@
 [package]
 name = "lines"
 version = "0.1.0"
+authors = ["Stonum <lexxarsh@gmail.com>"]
 edition = "2021"
 
 [dependencies]
@@ -16,6 +17,7 @@ features = [
    "bevy_sprite", # 2D (sprites) rendering
    "bevy_text",   # Text/font rendering
    "bevy_ui",     # UI toolkit
+   "webgl2",      # Web: use WebGL2 instead of WebGPU
 
    # File formats:
    "png",  # PNG image format for simple 2D images
@@ -31,8 +33,13 @@ opt-level = 3
 [profile.dev]
 opt-level = 1
 
+[profile.release]
+opt-level = 's'
+lto = "thin"
+
 [package.metadata.scripts]
 run = "cargo run"
+run_wasm = "trunc serve"
 check = "cargo check"
-build = "cargo build"
 release = "cargo build --release"
+release_wasm = "trunc build --release"
