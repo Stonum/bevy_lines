@@ -26,7 +26,7 @@ impl LeaderBoard {
         let mut players = Vec::with_capacity(10);
         // TODO: load from file
         for i in 1..=10 {
-            players.push(("Player ".to_string() + &i.to_string(), i * 1));
+            players.push(("Player ".to_string() + &i.to_string(), i * 100));
         }
         players.sort_by_key(|x| !x.1); // reversed sotring
         Self { players }
