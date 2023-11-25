@@ -3,6 +3,7 @@ use bevy::window::PrimaryWindow;
 use std::cmp::Ordering;
 
 use crate::events::IncrementCurrentGameScore;
+use crate::GameOptions;
 use crate::GameState;
 
 use super::ball::*;
@@ -22,7 +23,7 @@ pub fn spawn_board(
         .spawn((SpriteBundle {
             sprite: Sprite {
                 color: board_assets.board_color,
-                custom_size: Some(Vec2::splat(board.physical_size)),
+                custom_size: Some(Vec2::splat(GameOptions::BOARD_SIZE)),
                 ..default()
             },
             ..default()
@@ -30,16 +31,15 @@ pub fn spawn_board(
         // board tiles
         .with_children(|parent| {
             for coord in board.tiles_map.keys() {
-                let position = board.physical_pos(&coord);
                 parent.spawn(SpriteBundle {
                     sprite: Sprite {
                         color: board_assets.tile_color,
                         custom_size: Some(Vec2::splat(
-                            board.options.tile_size - board.options.tile_padding,
+                            GameOptions::TILE_SIZE - GameOptions::TILE_PADDING,
                         )),
                         ..default()
                     },
-                    transform: Transform::from_translation(position.extend(1.)),
+                    transform: Transform::from_translation(Vec2::from(*coord).extend(1.)),
                     ..default()
                 });
             }
@@ -62,11 +62,10 @@ pub fn spawn_animation_timer(mut commands: Commands) {
 }
 
 pub fn render_balls(
-    board: Res<Board>,
     mut query: Query<(&Coordinates, &mut Transform), (Changed<Coordinates>, With<Ball>)>,
 ) {
     for (coord, mut transform) in query.iter_mut() {
-        let Vec2 { x, y } = board.physical_pos(&coord);
+        let Vec2 { x, y } = Vec2::from(*coord);
         transform.translation.x = x;
         transform.translation.y = y;
     }
@@ -87,7 +86,7 @@ pub fn handle_mouse_clicks(
 
     if mouse_input.just_pressed(MouseButton::Left) {
         if let Some(position) = win.cursor_position() {
-            if let Some(next_coord) = board.logical_pos(win, position) {
+            if let Ok(next_coord) = position.try_into() {
                 for (entity, ball_coord, _ball_color) in q_balls.iter() {
                     if *ball_coord == next_coord {
                         if let Some(entity) = board.active_ball {
@@ -196,13 +195,11 @@ pub fn spawn_new_ball(
                     .spawn(SpriteBundle {
                         texture: ball_assets.texture.clone(),
                         sprite: Sprite {
-                            custom_size: Some(Vec2::splat(board.options.ball_size)),
-                            color: color.get(),
+                            custom_size: Some(Vec2::splat(GameOptions::BALL_SIZE)),
+                            color: color.into(),
                             ..default()
                         },
-                        transform: Transform::from_translation(
-                            board.physical_pos(&coord).extend(2.),
-                        ),
+                        transform: Transform::from_translation(Vec2::from(coord).extend(2.)),
                         ..default()
                     })
                     .insert(Name::from("Ball"))

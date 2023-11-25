@@ -40,17 +40,20 @@ impl BallColor {
             _ => BallColor::Yellow,
         }
     }
+}
 
-    pub fn get(&self) -> Color {
-        match self {
-            BallColor::Red => Color::hex("ec1c24").unwrap(),
-            BallColor::Blue => Color::hex("0e1bd2").unwrap(),
-            BallColor::Cyan => Color::hex("00a8f3").unwrap(),
-            BallColor::Green => Color::hex("069a30").unwrap(),
-            BallColor::Purple => Color::hex("d71fda").unwrap(),
-            BallColor::Brown => Color::hex("b97a56").unwrap(),
-            BallColor::Yellow => Color::hex("fff200").unwrap(),
-        }
+impl From<BallColor> for Color {
+    fn from(color: BallColor) -> Self {
+        let hex = match color {
+            BallColor::Red => "ec1c24",
+            BallColor::Blue => "0e1bd2",
+            BallColor::Cyan => "00a8f3",
+            BallColor::Green => "069a30",
+            BallColor::Purple => "d71fda",
+            BallColor::Brown => "b97a56",
+            BallColor::Yellow => "fff200",
+        };
+        Color::hex(hex).unwrap()
     }
 }
 

@@ -21,6 +21,18 @@ pub enum GameState {
     GameOver,
 }
 
+pub struct GameOptions;
+impl GameOptions {
+    pub const TILE_SIZE: f32 = 45.0;
+    pub const TILE_PADDING: f32 = 5.0;
+    pub const TILE_COUNT: u8 = 9;
+    pub const BOARD_SIZE: f32 = GameOptions::TILE_SIZE * GameOptions::TILE_COUNT as f32;
+    pub const BALL_SIZE: f32 = 35.0;
+    pub const MIN_BALLS_ON_LINE: usize = 5;
+    pub const WINDOW_WIDTH: f32 = 600.;
+    pub const WINDOW_HEIGHT: f32 = 800.;
+}
+
 fn main() {
     let mut app = App::new();
     app.add_state::<GameState>().add_plugins(
@@ -28,7 +40,7 @@ fn main() {
             .set(WindowPlugin {
                 primary_window: Some(Window {
                     title: "Lines".into(),
-                    resolution: (800., 600.).into(),
+                    resolution: (GameOptions::WINDOW_HEIGHT, GameOptions::WINDOW_WIDTH).into(),
                     ..default()
                 }),
                 ..default()

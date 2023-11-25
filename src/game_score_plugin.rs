@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
-use crate::board_plugin::board::Board;
 use crate::events::IncrementCurrentGameScore;
 use crate::leader_board_plugin::LeaderBoard;
+use crate::GameOptions;
 use crate::GameState;
 
 pub struct GameScorePlugin;
@@ -30,7 +30,6 @@ impl Plugin for GameScorePlugin {
 
 fn spawn_score_fields(
     game: Res<GameScore>,
-    board: Res<Board>,
     asset_server: Res<AssetServer>,
     mut commands: Commands,
 ) {
@@ -41,8 +40,8 @@ fn spawn_score_fields(
         color: Color::GREEN,
     };
 
-    let position_y = board.physical_size / 2. + board.options.tile_size;
-    let position_x = board.options.tile_size * 4.;
+    let position_y = GameOptions::BOARD_SIZE / 2. + GameOptions::TILE_SIZE;
+    let position_x = GameOptions::TILE_SIZE * 4.;
 
     commands.spawn((
         Text2dBundle {

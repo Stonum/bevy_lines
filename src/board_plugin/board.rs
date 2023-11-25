@@ -2,8 +2,9 @@ use bevy::prelude::*;
 use rand::prelude::*;
 use std::collections::{HashMap, HashSet, VecDeque};
 
+use crate::GameOptions;
+
 use super::ball::BallEntity;
-use super::BoardOptions;
 use super::Coordinates;
 
 #[derive(Resource)]
@@ -24,27 +25,21 @@ impl Default for BoardAssets {
 #[derive(Resource)]
 pub struct Board {
     pub entity: Option<Entity>,
-    pub options: BoardOptions,
     pub tiles_map: HashMap<Coordinates, Option<BallEntity>>,
-    pub physical_size: f32,
     pub active_ball: Option<Entity>,
 }
 
 impl Default for Board {
     fn default() -> Self {
-        let options = BoardOptions::default();
-
         let mut tiles = HashMap::new();
-        for x in 0..options.tile_count {
-            for y in 0..options.tile_count {
+        for x in 0..GameOptions::TILE_COUNT {
+            for y in 0..GameOptions::TILE_COUNT {
                 tiles.insert(Coordinates(x, y), None);
             }
         }
 
         Self {
             entity: None,
-            options,
-            physical_size: options.tile_size * options.tile_count as f32,
             active_ball: None,
             tiles_map: tiles,
         }
@@ -55,7 +50,7 @@ impl Board {
     // get all lines for board. horizontal, vertical and diagonal
     fn get_lines(&self) -> Vec<Vec<Coordinates>> {
         let mut lines: Vec<_> = vec![];
-        let count = self.options.tile_count as i32;
+        let count = GameOptions::TILE_COUNT as i32;
 
         // diagonal lines
         for x in -count..count * 2 {
@@ -77,19 +72,19 @@ impl Board {
                     rev_diagonal.push(Coordinates(row as u8, col as u8));
                 }
             }
-            if diagonal.len() >= self.options.min_balls_on_line {
+            if diagonal.len() >= GameOptions::MIN_BALLS_ON_LINE {
                 lines.push(diagonal);
             }
-            if rev_diagonal.len() >= self.options.min_balls_on_line {
+            if rev_diagonal.len() >= GameOptions::MIN_BALLS_ON_LINE {
                 lines.push(rev_diagonal);
             }
         }
 
         // vertical lines
-        for x in 0..self.options.tile_count {
+        for x in 0..GameOptions::TILE_COUNT {
             let mut line = vec![];
 
-            for y in 0..self.options.tile_count {
+            for y in 0..GameOptions::TILE_COUNT {
                 line.push(Coordinates(x, y));
             }
 
@@ -97,10 +92,10 @@ impl Board {
         }
 
         // horizontal lines
-        for y in 0..self.options.tile_count {
+        for y in 0..GameOptions::TILE_COUNT {
             let mut line = vec![];
 
-            for x in 0..self.options.tile_count {
+            for x in 0..GameOptions::TILE_COUNT {
                 line.push(Coordinates(x, y));
             }
 
@@ -122,30 +117,6 @@ impl Board {
             return Some(**coord);
         }
         None
-    }
-
-    pub fn physical_pos(&self, coord: &Coordinates) -> Vec2 {
-        let offset = -self.physical_size / 2.;
-        Vec2::new(
-            (coord.0 as f32 * self.options.tile_size) + (self.options.tile_size / 2.) + offset,
-            -((coord.1 as f32 * self.options.tile_size) + (self.options.tile_size / 2.) + offset),
-        )
-    }
-
-    pub fn logical_pos(&self, win: &Window, pos: Vec2) -> Option<Coordinates> {
-        let window_size = Vec2::new(win.width(), win.height());
-        let position = pos - window_size / 2.;
-        let size = self.physical_size / 2.;
-
-        if size < position.x.abs() || size < position.y.abs() {
-            return None;
-        }
-
-        let coord = Coordinates(
-            ((position.x + size) / self.options.tile_size) as u8,
-            ((position.y + size) / self.options.tile_size) as u8,
-        );
-        Some(coord)
     }
 
     pub fn get_balls_for_despawn(&self) -> Vec<Vec<Coordinates>> {
@@ -196,7 +167,7 @@ impl Board {
 
     fn get_neighbors(&self, coordinates: &Coordinates) -> Vec<Coordinates> {
         let mut neighbors = Vec::new();
-        let count = self.options.tile_count;
+        let count = GameOptions::TILE_COUNT;
 
         let row = coordinates.0;
         let col = coordinates.1;
@@ -222,7 +193,7 @@ impl Board {
         from: &Coordinates,
         to: &Coordinates,
     ) -> Option<Vec<Coordinates>> {
-        let count = self.options.tile_count as i32;
+        let count = GameOptions::TILE_COUNT as i32;
 
         let mut visited = HashSet::new();
         let mut prev = vec![vec![Coordinates(0, 0); count as usize]; count as usize];

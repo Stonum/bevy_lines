@@ -15,6 +15,7 @@ use next_balls_plugin::NextBallsPlugin;
 use events::*;
 use systems::*;
 
+use crate::GameOptions;
 use crate::GameState;
 
 pub struct BoardPlugin;
@@ -47,30 +48,34 @@ impl Plugin for BoardPlugin {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct BoardOptions {
-    pub tile_size: f32,
-    pub tile_padding: f32,
-    pub tile_count: u8,
-    pub ball_size: f32,
-    pub min_balls_on_line: usize,
-    pub window_width: f32,
-    pub window_height: f32,
-}
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Component)]
+pub struct Coordinates(pub u8, pub u8);
 
-impl Default for BoardOptions {
-    fn default() -> Self {
-        Self {
-            tile_size: 45.0,
-            tile_padding: 5.0,
-            tile_count: 9,
-            ball_size: 35.0,
-            min_balls_on_line: 5,
-            window_width: 600.,
-            window_height: 800.,
+impl TryFrom<Vec2> for Coordinates {
+    type Error = &'static str;
+    fn try_from(pos: Vec2) -> Result<Self, Self::Error> {
+        let window_size = Vec2::new(GameOptions::WINDOW_HEIGHT, GameOptions::WINDOW_WIDTH);
+        let position = pos - window_size / 2.;
+        let size = GameOptions::BOARD_SIZE / 2.;
+
+        if size < position.x.abs() || size < position.y.abs() {
+            return Err("Cursor position out of bounds");
         }
+
+        let coord = Coordinates(
+            ((position.x + size) / GameOptions::TILE_SIZE) as u8,
+            ((position.y + size) / GameOptions::TILE_SIZE) as u8,
+        );
+        Ok(coord)
     }
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Component)]
-pub struct Coordinates(pub u8, pub u8);
+impl From<Coordinates> for Vec2 {
+    fn from(coord: Coordinates) -> Self {
+        let offset = -GameOptions::BOARD_SIZE / 2.;
+        Vec2::new(
+            (coord.0 as f32 * GameOptions::TILE_SIZE) + (GameOptions::TILE_SIZE / 2.) + offset,
+            -((coord.1 as f32 * GameOptions::TILE_SIZE) + (GameOptions::TILE_SIZE / 2.) + offset),
+        )
+    }
+}

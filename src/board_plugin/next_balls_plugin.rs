@@ -2,9 +2,9 @@ use bevy::prelude::*;
 
 use super::ball::BallAssets;
 use super::ball::BallColor;
-use super::board::Board;
 use super::board::BoardAssets;
 use super::events::ChangeNextBallsEvent;
+use crate::GameOptions;
 use crate::GameState;
 
 pub struct NextBallsPlugin;
@@ -40,21 +40,21 @@ impl NextBall {
     }
 }
 
-fn spawn_next_board(board: Res<Board>, board_assets: Res<BoardAssets>, mut commands: Commands) {
+fn spawn_next_board(board_assets: Res<BoardAssets>, mut commands: Commands) {
     commands
         .spawn((
             SpriteBundle {
                 sprite: Sprite {
                     color: board_assets.board_color,
                     custom_size: Some(Vec2::new(
-                        board.options.tile_size * 3.0,
-                        board.options.tile_size,
+                        GameOptions::TILE_SIZE * 3.0,
+                        GameOptions::TILE_SIZE,
                     )),
                     ..default()
                 },
                 transform: Transform::from_xyz(
                     0.,
-                    board.physical_size / 2. + board.options.tile_size,
+                    GameOptions::BOARD_SIZE / 2. + GameOptions::TILE_SIZE,
                     0.,
                 ),
                 ..default()
@@ -63,7 +63,7 @@ fn spawn_next_board(board: Res<Board>, board_assets: Res<BoardAssets>, mut comma
         ))
         .with_children(|parent| {
             for x in 0..3 {
-                let position_x: f32 = -board.options.tile_size + board.options.tile_size * x as f32;
+                let position_x: f32 = -GameOptions::TILE_SIZE + GameOptions::TILE_SIZE * x as f32;
 
                 // spawn tiles
                 parent.spawn((
@@ -71,7 +71,7 @@ fn spawn_next_board(board: Res<Board>, board_assets: Res<BoardAssets>, mut comma
                         sprite: Sprite {
                             color: board_assets.tile_color,
                             custom_size: Some(Vec2::splat(
-                                board.options.tile_size - board.options.tile_padding,
+                                GameOptions::TILE_SIZE - GameOptions::TILE_PADDING,
                             )),
                             ..default()
                         },
@@ -85,7 +85,6 @@ fn spawn_next_board(board: Res<Board>, board_assets: Res<BoardAssets>, mut comma
 }
 
 fn spawn_next_balls(
-    board: Res<Board>,
     ball_assets: Res<BallAssets>,
     mut commands: Commands,
     q_next_tiles: Query<Entity, With<NextTile>>,
@@ -96,7 +95,7 @@ fn spawn_next_balls(
                 SpriteBundle {
                     texture: ball_assets.texture.clone(),
                     sprite: Sprite {
-                        custom_size: Some(Vec2::splat(board.options.ball_size)),
+                        custom_size: Some(Vec2::splat(GameOptions::BALL_SIZE)),
                         ..default()
                     },
                     ..default()
@@ -109,7 +108,7 @@ fn spawn_next_balls(
 
 fn render_next_color(mut query_next_ball: Query<(&NextBall, &mut Sprite), Changed<NextBall>>) {
     for (ball, mut sprite) in query_next_ball.iter_mut() {
-        sprite.color = ball.color.get();
+        sprite.color = ball.color.into();
     }
 }
 
