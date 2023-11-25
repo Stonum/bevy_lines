@@ -76,7 +76,7 @@ pub fn handle_mouse_clicks(
     mut board: ResMut<Board>,
     mut commands: Commands,
     q_windows: Query<&Window, With<PrimaryWindow>>,
-    mut q_balls: Query<(Entity, &mut Coordinates, &BallColor), With<Ball>>,
+    mut q_balls: Query<(&mut Coordinates, &mut Transform), With<Ball>>,
     query_next_ball: Query<&NextBall, With<NextBall>>,
     mut ev_spawn_balls: EventWriter<SpawnNewBallEvent>,
     mut ev_change_next: EventWriter<ChangeNextBallsEvent>,
@@ -84,66 +84,94 @@ pub fn handle_mouse_clicks(
 ) {
     let win = q_windows.get_single().expect("no primary window");
 
-    if mouse_input.just_pressed(MouseButton::Left) {
-        if let Some(position) = win.cursor_position() {
-            if let Ok(next_coord) = position.try_into() {
-                for (entity, ball_coord, _ball_color) in q_balls.iter() {
-                    if *ball_coord == next_coord {
-                        if let Some(entity) = board.active_ball {
-                            commands.entity(entity).remove::<BallAnimationState>();
-                            board.active_ball = None;
-                        }
-                        board.active_ball = Some(entity);
-                        commands
-                            .entity(entity)
-                            .insert(BallAnimationState::default());
+    if !mouse_input.just_pressed(MouseButton::Left) {
+        return;
+    }
+    let next_coordinates: Option<Coordinates> = win
+        .cursor_position()
+        .and_then(|position| position.try_into().ok());
+
+    if let Some(next_coordinates) = next_coordinates {
+        let ball = board.tiles_map.get(&next_coordinates).unwrap().as_ref();
+        match (board.active_ball, ball) {
+            // set active ball
+            (None, Some(ball)) => {
+                commands
+                    .entity(ball.entity)
+                    .insert(BallAnimationState::default());
+                board.active_ball = Some(ball.entity);
+            }
+            // change active ball
+            (Some(active_ball), Some(ball)) if active_ball != ball.entity => {
+                commands.entity(active_ball).remove::<BallAnimationState>();
+                // fix ball position after stop animation
+                if let Ok((coordinates, mut transform)) = q_balls.get_mut(active_ball) {
+                    let Vec2 { x, y } = Vec2::from(*coordinates);
+                    transform.translation.x = x;
+                    transform.translation.y = y;
+                }
+                commands
+                    .entity(ball.entity)
+                    .insert(BallAnimationState::default());
+                board.active_ball = Some(ball.entity);
+            }
+            // move active ball to new position
+            (Some(active_ball), None) => {
+                if let Ok((mut coordinates, _)) = q_balls.get_mut(active_ball) {
+                    if coordinates.partial_cmp(&next_coordinates) != Some(Ordering::Equal)
+                        && board
+                            .get_path_to_move(&coordinates, &next_coordinates)
+                            .is_some()
+                    {
+                        // remove ball from old coordinates
+                        let ball_entity =
+                            board.tiles_map.insert(*coordinates, None).unwrap_or(None);
+                        // insert ball to new coordinates
+                        board.tiles_map.insert(next_coordinates, ball_entity);
+
+                        commands.entity(active_ball).remove::<BallAnimationState>();
+                        board.active_ball = None;
+
+                        // change coordinates
+                        coordinates.0 = next_coordinates.0;
+                        coordinates.1 = next_coordinates.1;
+
+                        despawn_balls_and_inc_score(&mut board, &mut commands, &mut ev_inc_score);
+
+                        // spawn new balls
+                        query_next_ball.iter().for_each(|next_ball| {
+                            ev_spawn_balls.send(SpawnNewBallEvent(next_ball.color));
+                        });
+
+                        // mb new combinations after spawn new balls
+                        despawn_balls_and_inc_score(&mut board, &mut commands, &mut ev_inc_score);
+
+                        // change next colors
+                        ev_change_next.send(ChangeNextBallsEvent);
                     }
                 }
-                // move ball to new position
-                if let Some(ball) = board.active_ball {
-                    if let Ok((_entity, mut coordinates, _color)) = q_balls.get_mut(ball) {
-                        if coordinates.partial_cmp(&next_coord) != Some(Ordering::Equal)
-                            && board.get_path_to_move(&coordinates, &next_coord).is_some()
-                        {
-                            // remove ball from old coordinates
-                            let ball_entity =
-                                board.tiles_map.insert(*coordinates, None).unwrap_or(None);
-                            // insert ball to new coordinates
-                            board.tiles_map.insert(next_coord, ball_entity);
+            }
+            // do nothing
+            _ => (),
+        }
+    }
+}
 
-                            if let Some(entity) = board.active_ball {
-                                commands.entity(entity).remove::<BallAnimationState>();
-                                board.active_ball = None;
-                            }
+fn despawn_balls_and_inc_score(
+    board: &mut ResMut<Board>,
+    commands: &mut Commands,
+    ev_inc_score: &mut EventWriter<IncrementCurrentGameScore>,
+) {
+    let despawned_balls = board.get_balls_for_despawn();
 
-                            // change coordinates
-                            coordinates.0 = next_coord.0;
-                            coordinates.1 = next_coord.1;
+    for line in despawned_balls {
+        // set game score
+        ev_inc_score.send(IncrementCurrentGameScore(line.len() as u32 * 2));
 
-                            let despawned_balls = board.get_balls_for_despawn();
-
-                            for line in despawned_balls {
-                                // set game score
-                                ev_inc_score.send(IncrementCurrentGameScore(line.len() as u32 * 2));
-
-                                for coordinates in line {
-                                    let ball =
-                                        board.tiles_map.insert(coordinates, None).unwrap_or(None);
-                                    if let Some(ball) = ball {
-                                        commands.entity(ball.entity).despawn_recursive();
-                                    }
-                                }
-                            }
-
-                            for ball in query_next_ball.iter() {
-                                // spawn new balls
-                                ev_spawn_balls.send(SpawnNewBallEvent(ball.color));
-                            }
-                            // change next colors
-                            ev_change_next.send(ChangeNextBallsEvent);
-                        }
-                    }
-                }
+        for coordinates in line {
+            let ball = board.tiles_map.insert(coordinates, None).unwrap_or(None);
+            if let Some(ball) = ball {
+                commands.entity(ball.entity).despawn_recursive();
             }
         }
     }
