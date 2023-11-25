@@ -29,8 +29,8 @@ impl GameOptions {
     pub const BOARD_SIZE: f32 = GameOptions::TILE_SIZE * GameOptions::TILE_COUNT as f32;
     pub const BALL_SIZE: f32 = 35.0;
     pub const MIN_BALLS_ON_LINE: usize = 5;
-    pub const WINDOW_WIDTH: f32 = 600.;
-    pub const WINDOW_HEIGHT: f32 = 800.;
+    pub const WINDOW_WIDTH: f32 = 800.;
+    pub const WINDOW_HEIGHT: f32 = 600.;
 }
 
 fn main() {
@@ -40,7 +40,7 @@ fn main() {
             .set(WindowPlugin {
                 primary_window: Some(Window {
                     title: "Lines".into(),
-                    resolution: (GameOptions::WINDOW_HEIGHT, GameOptions::WINDOW_WIDTH).into(),
+                    resolution: (GameOptions::WINDOW_WIDTH, GameOptions::WINDOW_HEIGHT).into(),
                     ..default()
                 }),
                 ..default()

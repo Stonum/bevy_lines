@@ -54,7 +54,7 @@ pub struct Coordinates(pub u8, pub u8);
 impl TryFrom<Vec2> for Coordinates {
     type Error = &'static str;
     fn try_from(pos: Vec2) -> Result<Self, Self::Error> {
-        let window_size = Vec2::new(GameOptions::WINDOW_HEIGHT, GameOptions::WINDOW_WIDTH);
+        let window_size = Vec2::new(GameOptions::WINDOW_WIDTH, GameOptions::WINDOW_HEIGHT);
         let position = pos - window_size / 2.;
         let size = GameOptions::BOARD_SIZE / 2.;
 
