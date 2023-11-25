@@ -136,18 +136,27 @@ pub fn handle_mouse_clicks(
                         coordinates.0 = next_coordinates.0;
                         coordinates.1 = next_coordinates.1;
 
-                        despawn_balls_and_inc_score(&mut board, &mut commands, &mut ev_inc_score);
+                        let despawned_lines = despawn_balls_and_inc_score(
+                            &mut board,
+                            &mut commands,
+                            &mut ev_inc_score,
+                        );
 
-                        // spawn new balls
-                        query_next_ball.iter().for_each(|next_ball| {
-                            ev_spawn_balls.send(SpawnNewBallEvent(next_ball.color));
-                        });
+                        if despawned_lines == 0 {
+                            // spawn new balls
+                            query_next_ball.iter().for_each(|next_ball| {
+                                ev_spawn_balls.send(SpawnNewBallEvent(next_ball.color));
+                            });
+                            // mb new combinations after spawn new balls
+                            despawn_balls_and_inc_score(
+                                &mut board,
+                                &mut commands,
+                                &mut ev_inc_score,
+                            );
 
-                        // mb new combinations after spawn new balls
-                        despawn_balls_and_inc_score(&mut board, &mut commands, &mut ev_inc_score);
-
-                        // change next colors
-                        ev_change_next.send(ChangeNextBallsEvent);
+                            // change next colors
+                            ev_change_next.send(ChangeNextBallsEvent);
+                        }
                     }
                 }
             }
@@ -161,8 +170,9 @@ fn despawn_balls_and_inc_score(
     board: &mut ResMut<Board>,
     commands: &mut Commands,
     ev_inc_score: &mut EventWriter<IncrementCurrentGameScore>,
-) {
+) -> usize {
     let despawned_balls = board.get_balls_for_despawn();
+    let len = despawned_balls.len();
 
     for line in despawned_balls {
         // set game score
@@ -175,6 +185,7 @@ fn despawn_balls_and_inc_score(
             }
         }
     }
+    len
 }
 
 pub fn animate_ball_system(
