@@ -58,7 +58,12 @@ impl LeaderBoard {
                 }
             }
         }
-        Some(players)
+
+        if players.is_empty() {
+            None
+        } else {
+            Some(players)
+        }
     }
 
     fn set_to_local_storage(players: &Vec<(String, u32)>) -> Option<()> {
