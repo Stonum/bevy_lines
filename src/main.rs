@@ -5,6 +5,7 @@ mod board_plugin;
 mod events;
 mod game_score_plugin;
 mod leader_board_plugin;
+mod menu_plugin;
 
 use bevy::prelude::*;
 use bevy_embedded_assets::EmbeddedAssetPlugin;
@@ -13,12 +14,15 @@ use board_plugin::BoardPlugin;
 use events::*;
 use game_score_plugin::GameScorePlugin;
 use leader_board_plugin::LeaderBoardPlugin;
+use menu_plugin::MenuPlugin;
 
 #[derive(States, Default, Clone, Eq, PartialEq, Debug, Hash)]
 pub enum GameState {
     #[default]
     Playing,
     GameOver,
+    Restarting,
+    Leaderboard,
 }
 
 pub struct GameOptions;
@@ -58,23 +62,12 @@ fn main() {
     app.insert_resource(ClearColor(Color::BLACK));
     app.add_event::<IncrementCurrentGameScore>();
 
-    app.add_plugins((BoardPlugin, LeaderBoardPlugin, GameScorePlugin));
+    app.add_plugins((BoardPlugin, LeaderBoardPlugin, GameScorePlugin, MenuPlugin));
 
-    app.add_systems(Startup, spawn_camera)
-        .add_systems(Update, handle_keyboard)
-        .run();
+    app.add_systems(Startup, spawn_camera).run();
 }
 
 fn spawn_camera(mut commands: Commands) {
     // Create a camera
     commands.spawn(Camera2dBundle::default());
-}
-
-pub fn handle_keyboard(keys: Res<Input<KeyCode>>, mut game_state: ResMut<NextState<GameState>>) {
-    if keys.pressed(KeyCode::X) {
-        game_state.set(GameState::GameOver);
-    }
-    if keys.pressed(KeyCode::P) {
-        game_state.set(GameState::Playing);
-    }
 }
