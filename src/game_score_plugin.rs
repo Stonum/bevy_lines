@@ -100,5 +100,7 @@ fn game_score_system(
     mut game: ResMut<GameScore>,
     mut ev_inc: EventReader<IncrementCurrentGameScore>,
 ) {
-    game.current_score += ev_inc.iter().map(|ev| ev.0).sum::<u32>();
+    if ev_inc.len() > 0 {
+        game.current_score += ev_inc.iter().map(|ev| ev.0).sum::<u32>();
+    }
 }

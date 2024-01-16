@@ -191,20 +191,20 @@ fn despawn_balls_and_inc_score(
 pub fn animate_ball_system(
     time: Res<Time>,
     mut query_animated_ball: Query<(&mut Transform, &mut BallAnimationState)>,
-    mut query: Query<&mut BallAnimationTimer>,
+    mut query_timer: Query<&mut BallAnimationTimer>,
 ) {
-    for (mut transform, mut state) in query_animated_ball.iter_mut() {
-        for mut timer in &mut query {
-            if timer.tick(time.delta()).just_finished() {
-                match *state {
-                    BallAnimationState::Up => {
-                        transform.translation.y += 4.;
-                        *state = BallAnimationState::Down;
-                    }
-                    BallAnimationState::Down => {
-                        transform.translation.y -= 4.;
-                        *state = BallAnimationState::Up;
-                    }
+    for ((mut transform, mut state), mut timer) in
+        query_animated_ball.iter_mut().zip(query_timer.iter_mut())
+    {
+        if timer.tick(time.delta()).just_finished() {
+            match *state {
+                BallAnimationState::Up => {
+                    transform.translation.y += 4.;
+                    *state = BallAnimationState::Down;
+                }
+                BallAnimationState::Down => {
+                    transform.translation.y -= 4.;
+                    *state = BallAnimationState::Up;
                 }
             }
         }
@@ -252,10 +252,10 @@ pub fn spawn_new_ball(
                     .insert(coord, Some(BallEntity::new(color, entity)));
             });
         }
+        if board.get_free_tile().is_none() {
+            game_state.set(GameState::GameOver);
+        };
     }
-    if board.get_free_tile().is_none() {
-        game_state.set(GameState::GameOver);
-    };
 }
 
 pub fn despawn_board(mut commands: Commands, mut board: ResMut<Board>) {
