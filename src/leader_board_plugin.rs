@@ -1,5 +1,8 @@
 use bevy::prelude::*;
+
+#[cfg(target_arch = "wasm32")]
 use js_sys::JSON;
+#[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
 use crate::game_score_plugin::GameScore;
@@ -40,6 +43,12 @@ impl LeaderBoard {
         Self { players }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
+    fn get_from_local_storage() -> Option<Vec<(String, u32)>> {
+        None
+    }
+
+    #[cfg(target_arch = "wasm32")]
     fn get_from_local_storage() -> Option<Vec<(String, u32)>> {
         let window = web_sys::window()?;
         let local_storage = window.local_storage().ok()??;
@@ -66,6 +75,12 @@ impl LeaderBoard {
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
+    fn set_to_local_storage(_players: &Vec<(String, u32)>) -> Option<()> {
+        None
+    }
+
+    #[cfg(target_arch = "wasm32")]
     fn set_to_local_storage(players: &Vec<(String, u32)>) -> Option<()> {
         let window = web_sys::window()?;
         let local_storage = window.local_storage().ok()??;
