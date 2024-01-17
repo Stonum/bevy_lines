@@ -6,7 +6,16 @@ use js_sys::JSON;
 use wasm_bindgen::prelude::*;
 
 use crate::game_score_plugin::GameScore;
+use crate::GameOptions;
 use crate::GameState;
+
+const LINE_COLOR: Color = GameOptions::TILE_COLOR;
+const LINE_BORDER_COLOR: Color = GameOptions::BOARD_COLOR;
+
+const LINE_HEIGHT: f32 = GameOptions::TILE_SIZE;
+const LINE_WIDTH: f32 = GameOptions::BOARD_SIZE;
+const LINE_BORDER: f32 = GameOptions::TILE_PADDING / 2.0;
+const LINE_PADDING: f32 = GameOptions::TILE_PADDING * 2.0;
 
 const MAX_PLAYERS: usize = 10;
 
@@ -15,11 +24,9 @@ pub struct LeaderBoardPlugin;
 impl Plugin for LeaderBoardPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(LeaderBoard::new())
-            .add_systems(
-                OnEnter(GameState::GameOver),
-                (change_leaders, spawn_leader_board),
-            )
-            .add_systems(OnExit(GameState::GameOver), despawn_leader_board);
+            .add_systems(OnEnter(GameState::GameOver), change_leaders)
+            .add_systems(OnEnter(GameState::Leaderboard), spawn_leader_board)
+            .add_systems(OnExit(GameState::Leaderboard), despawn_leader_board);
     }
 }
 
@@ -27,6 +34,9 @@ impl Plugin for LeaderBoardPlugin {
 pub struct LeaderBoard {
     pub players: Vec<(String, u32)>,
 }
+
+#[derive(Component)]
+struct LeaderBoardNode;
 
 impl LeaderBoard {
     pub fn new() -> Self {
@@ -117,22 +127,82 @@ impl LeaderBoard {
     }
 }
 
-pub fn change_leaders(mut leader_board: ResMut<LeaderBoard>, game_score: Res<GameScore>) {
+pub fn change_leaders(
+    mut leader_board: ResMut<LeaderBoard>,
+    game_score: Res<GameScore>,
+    mut game_state: ResMut<NextState<GameState>>,
+) {
     if let Some(score) = leader_board.get_lowest_score() {
         if game_score.current_score > score {
             leader_board.add_player("new player".into(), game_score.current_score);
         }
     }
+    game_state.set(GameState::Leaderboard);
 }
 
-pub fn spawn_leader_board(
-    mut _commands: Commands,
-    _leader_board: Res<LeaderBoard>,
-    mut game_state: ResMut<NextState<GameState>>,
+fn spawn_leader_board(
+    mut commands: Commands,
+    leader_board: Res<LeaderBoard>,
+    asset_server: Res<AssetServer>,
 ) {
-    game_state.set(GameState::Playing);
+    let font = asset_server.load("fonts/ThinPixel7.ttf");
+    let text_style = TextStyle {
+        font: font.clone(),
+        font_size: 35.0,
+        color: Color::DARK_GRAY,
+    };
+
+    commands
+        .spawn(NodeBundle {
+            style: Style {
+                flex_direction: FlexDirection::Column,
+                width: Val::Percent(100.0),
+                position_type: PositionType::Absolute,
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                align_self: AlignSelf::Center,
+                ..default()
+            },
+            ..default()
+        })
+        .with_children(|parent| {
+            for (name, value) in leader_board.players.iter() {
+                spawn_leader_line(parent, &text_style, name, value);
+            }
+        })
+        .insert(LeaderBoardNode);
 }
 
-pub fn despawn_leader_board(mut _commands: Commands) {
-    // TODO
+fn spawn_leader_line(parent: &mut ChildBuilder, text_style: &TextStyle, text: &str, value: &u32) {
+    parent
+        .spawn(NodeBundle {
+            style: Style {
+                width: Val::Px(LINE_WIDTH),
+                height: Val::Px(LINE_HEIGHT),
+                border: UiRect::all(Val::Px(LINE_BORDER)),
+                justify_content: JustifyContent::SpaceBetween,
+                align_items: AlignItems::Center,
+                padding: UiRect::all(Val::Px(LINE_PADDING)),
+                ..default()
+            },
+            border_color: BorderColor(LINE_BORDER_COLOR),
+            background_color: LINE_COLOR.into(),
+            ..default()
+        })
+        .with_children(|parent| {
+            parent.spawn(TextBundle::from_section(text, text_style.clone()));
+            parent.spawn(TextBundle::from_section(
+                value.to_string(),
+                text_style.clone(),
+            ));
+        });
+}
+
+fn despawn_leader_board(
+    mut commands: Commands,
+    leader_board_query: Query<Entity, With<LeaderBoardNode>>,
+) {
+    for entity in leader_board_query.iter() {
+        commands.entity(entity).despawn_recursive();
+    }
 }

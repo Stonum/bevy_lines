@@ -35,6 +35,9 @@ impl GameOptions {
     pub const MIN_BALLS_ON_LINE: usize = 5;
     pub const WINDOW_WIDTH: f32 = 800.;
     pub const WINDOW_HEIGHT: f32 = 600.;
+
+    pub const BOARD_COLOR: Color = Color::rgb(0.53, 0.53, 0.53);
+    pub const TILE_COLOR: Color = Color::rgb(0.88, 0.88, 0.88);
 }
 
 fn main() {
