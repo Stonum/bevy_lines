@@ -4,6 +4,16 @@ use bevy::prelude::*;
 use crate::GameOptions;
 use crate::GameState;
 
+const NORMAL_BUTTON: Color = GameOptions::TILE_COLOR;
+const HOVERED_BUTTON: Color = Color::rgb(0.80, 0.80, 0.80);
+const PRESSED_BUTTON: Color = Color::rgb(0.90, 0.90, 0.90);
+const BUTTON_BORDER_COLOR: Color = GameOptions::BOARD_COLOR;
+
+const BUTTON_HEIGHT: f32 = GameOptions::TILE_SIZE;
+const BUTTON_WIDTH: f32 = BUTTON_HEIGHT * 5.0;
+const BUTTON_BORDER: f32 = GameOptions::TILE_PADDING / 2.0;
+const BUTTON_PADDING: f32 = GameOptions::TILE_PADDING * 2.0;
+
 pub struct MenuPlugin;
 
 impl Plugin for MenuPlugin {
@@ -20,17 +30,8 @@ enum MenuButton {
     Leaderboard,
 }
 
-const NORMAL_BUTTON: Color = Color::rgb(0.88, 0.88, 0.88);
-const HOVERED_BUTTON: Color = Color::rgb(0.80, 0.80, 0.80);
-const PRESSED_BUTTON: Color = Color::rgb(0.90, 0.90, 0.90);
-
-const BUTTON_HEIGHT: f32 = GameOptions::TILE_SIZE;
-const BUTTON_WIDTH: f32 = BUTTON_HEIGHT * 5.0;
-const BUTTON_BORDER: f32 = GameOptions::TILE_PADDING / 2.0;
-const BUTTON_PADDING: f32 = GameOptions::TILE_PADDING * 2.0;
-
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let font = asset_server.load("fonts/Glitch-Demo.ttf");
+    let font = asset_server.load("fonts/ThinPixel7.ttf");
     let text_style = TextStyle {
         font: font.clone(),
         font_size: 35.0,
@@ -41,9 +42,9 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         .spawn(NodeBundle {
             style: Style {
                 width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
                 align_items: AlignItems::End,
                 justify_content: JustifyContent::Center,
+                align_self: AlignSelf::End,
                 padding: UiRect::bottom(Val::Px(BUTTON_PADDING)),
                 ..default()
             },
@@ -74,7 +75,7 @@ fn spawn_button(
                 margin: UiRect::horizontal(Val::Px(BUTTON_BORDER)),
                 ..default()
             },
-            border_color: BorderColor(Color::rgb(0.53, 0.53, 0.53)),
+            border_color: BorderColor(BUTTON_BORDER_COLOR),
             background_color: NORMAL_BUTTON.into(),
             ..default()
         })

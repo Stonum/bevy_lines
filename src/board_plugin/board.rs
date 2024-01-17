@@ -8,21 +8,6 @@ use super::ball::BallEntity;
 use super::Coordinates;
 
 #[derive(Resource)]
-pub struct BoardAssets {
-    pub board_color: Color,
-    pub tile_color: Color,
-}
-
-impl Default for BoardAssets {
-    fn default() -> Self {
-        Self {
-            board_color: Color::rgb(0.53, 0.53, 0.53),
-            tile_color: Color::rgb(0.88, 0.88, 0.88),
-        }
-    }
-}
-
-#[derive(Resource)]
 pub struct Board {
     pub entity: Option<Entity>,
     pub tiles_map: HashMap<Coordinates, Option<BallEntity>>,

@@ -8,7 +8,6 @@ use bevy::prelude::*;
 
 use ball::BallAssets;
 use board::Board;
-use board::BoardAssets;
 
 use next_balls_plugin::NextBallsPlugin;
 
@@ -22,9 +21,7 @@ pub struct BoardPlugin;
 
 impl Plugin for BoardPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<BallAssets>()
-            .init_resource::<BoardAssets>()
-            .init_resource::<Board>();
+        app.init_resource::<BallAssets>().init_resource::<Board>();
 
         app.add_plugins(NextBallsPlugin);
 

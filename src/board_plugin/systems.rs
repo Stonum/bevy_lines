@@ -14,7 +14,6 @@ use super::Coordinates;
 
 pub fn spawn_board(
     mut board: ResMut<Board>,
-    board_assets: Res<BoardAssets>,
     mut commands: Commands,
     mut ev_spawn_balls: EventWriter<SpawnNewBallEvent>,
 ) {
@@ -22,7 +21,7 @@ pub fn spawn_board(
         // board background
         .spawn((SpriteBundle {
             sprite: Sprite {
-                color: board_assets.board_color,
+                color: GameOptions::BOARD_COLOR,
                 custom_size: Some(Vec2::splat(GameOptions::BOARD_SIZE)),
                 ..default()
             },
@@ -33,7 +32,7 @@ pub fn spawn_board(
             for coord in board.tiles_map.keys() {
                 parent.spawn(SpriteBundle {
                     sprite: Sprite {
-                        color: board_assets.tile_color,
+                        color: GameOptions::TILE_COLOR,
                         custom_size: Some(Vec2::splat(
                             GameOptions::TILE_SIZE - GameOptions::TILE_PADDING,
                         )),
