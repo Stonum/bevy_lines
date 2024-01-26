@@ -6,6 +6,7 @@ use js_sys::JSON;
 use wasm_bindgen::prelude::*;
 
 use crate::game_score_plugin::GameScore;
+use crate::layout::Main;
 use crate::GameOptions;
 use crate::GameState;
 
@@ -14,8 +15,8 @@ const LINE_BORDER_COLOR: Color = GameOptions::BOARD_COLOR;
 
 const LINE_HEIGHT: f32 = GameOptions::TILE_SIZE;
 const LINE_WIDTH: f32 = GameOptions::BOARD_SIZE;
-const LINE_BORDER: f32 = GameOptions::TILE_PADDING / 2.0;
-const LINE_PADDING: f32 = GameOptions::TILE_PADDING * 2.0;
+const LINE_BORDER: f32 = GameOptions::TILE_PADDING;
+const LINE_PADDING: f32 = GameOptions::TILE_PADDING * 4.0;
 
 const MAX_PLAYERS: usize = 10;
 
@@ -144,6 +145,7 @@ fn spawn_leader_board(
     mut commands: Commands,
     leader_board: Res<LeaderBoard>,
     asset_server: Res<AssetServer>,
+    q_main: Query<Entity, With<Main>>,
 ) {
     let font = asset_server.load("fonts/ThinPixel7.ttf");
     let text_style = TextStyle {
@@ -152,15 +154,15 @@ fn spawn_leader_board(
         color: Color::DARK_GRAY,
     };
 
-    commands
-        .spawn(NodeBundle {
+    let main = q_main.get_single().expect("Main not find");
+
+    commands.entity(main).with_children(|main| {
+        main.spawn(NodeBundle {
             style: Style {
                 flex_direction: FlexDirection::Column,
                 width: Val::Percent(100.0),
-                position_type: PositionType::Absolute,
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
-                align_self: AlignSelf::Center,
                 ..default()
             },
             ..default()
@@ -171,6 +173,7 @@ fn spawn_leader_board(
             }
         })
         .insert(LeaderBoardNode);
+    });
 }
 
 fn spawn_leader_line(parent: &mut ChildBuilder, text_style: &TextStyle, text: &str, value: &u32) {

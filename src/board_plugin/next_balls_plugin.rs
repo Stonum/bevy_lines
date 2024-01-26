@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use super::ball::BallAssets;
 use super::ball::BallColor;
 use super::events::ChangeNextBallsEvent;
+use crate::layout::HeaderCenter;
 use crate::GameOptions;
 use crate::GameState;
 
@@ -16,9 +17,6 @@ impl Plugin for NextBallsPlugin {
             .add_systems(OnExit(GameState::Playing), despawn_next_balls);
     }
 }
-
-#[derive(Component)]
-struct NextBoard;
 
 #[derive(Component)]
 struct NextTile;
@@ -39,48 +37,29 @@ impl NextBall {
     }
 }
 
-fn spawn_next_board(mut commands: Commands) {
-    commands
-        .spawn((
-            SpriteBundle {
-                sprite: Sprite {
-                    color: GameOptions::BOARD_COLOR,
-                    custom_size: Some(Vec2::new(
-                        GameOptions::TILE_SIZE * 3.0,
-                        GameOptions::TILE_SIZE,
-                    )),
-                    ..default()
-                },
-                transform: Transform::from_xyz(
-                    0.,
-                    GameOptions::BOARD_SIZE / 2. + GameOptions::TILE_SIZE * 1.1,
-                    0.,
-                ),
-                ..default()
-            },
-            NextBoard,
-        ))
-        .with_children(|parent| {
-            for x in 0..3 {
-                let position_x: f32 = -GameOptions::TILE_SIZE + GameOptions::TILE_SIZE * x as f32;
+fn spawn_next_board(mut commands: Commands, header: Query<Entity, With<HeaderCenter>>) {
+    let header = header.get_single().expect("Header not found");
 
-                // spawn tiles
-                parent.spawn((
-                    SpriteBundle {
-                        sprite: Sprite {
-                            color: GameOptions::TILE_COLOR,
-                            custom_size: Some(Vec2::splat(
-                                GameOptions::TILE_SIZE - GameOptions::TILE_PADDING,
-                            )),
-                            ..default()
-                        },
-                        transform: Transform::from_xyz(position_x, 0., 1.),
+    commands.entity(header).with_children(|header| {
+        for _ in 0..3 {
+            header.spawn((
+                NodeBundle {
+                    style: Style {
+                        width: Val::Px(GameOptions::TILE_SIZE),
+                        height: Val::Px(GameOptions::TILE_SIZE),
+                        border: UiRect::all(Val::Px(GameOptions::TILE_PADDING)),
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
                         ..default()
                     },
-                    NextTile,
-                ));
-            }
-        });
+                    border_color: GameOptions::BOARD_COLOR.into(),
+                    background_color: GameOptions::TILE_COLOR.into(),
+                    ..default()
+                },
+                NextTile,
+            ));
+        }
+    });
 }
 
 fn spawn_next_balls(
@@ -91,12 +70,13 @@ fn spawn_next_balls(
     for entity in q_next_tiles.iter() {
         commands.entity(entity).with_children(|parent| {
             parent.spawn((
-                SpriteBundle {
-                    texture: ball_assets.texture.clone(),
-                    sprite: Sprite {
-                        custom_size: Some(Vec2::splat(GameOptions::BALL_SIZE)),
+                ImageBundle {
+                    style: Style {
+                        width: Val::Px(GameOptions::BALL_SIZE),
+                        height: Val::Px(GameOptions::BALL_SIZE),
                         ..default()
                     },
+                    image: UiImage::new(ball_assets.texture.clone()),
                     ..default()
                 },
                 NextBall::new(),
@@ -105,9 +85,11 @@ fn spawn_next_balls(
     }
 }
 
-fn render_next_color(mut query_next_ball: Query<(&NextBall, &mut Sprite), Changed<NextBall>>) {
-    for (ball, mut sprite) in query_next_ball.iter_mut() {
-        sprite.color = ball.color.into();
+fn render_next_color(
+    mut query_next_ball: Query<(&NextBall, &mut BackgroundColor), Changed<NextBall>>,
+) {
+    for (ball, mut color) in query_next_ball.iter_mut() {
+        color.0 = ball.color.into();
     }
 }
 

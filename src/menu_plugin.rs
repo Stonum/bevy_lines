@@ -1,6 +1,7 @@
 use bevy::ecs::component::Component;
 use bevy::prelude::*;
 
+use crate::layout::Footer;
 use crate::GameOptions;
 use crate::GameState;
 
@@ -11,8 +12,7 @@ const BUTTON_BORDER_COLOR: Color = GameOptions::BOARD_COLOR;
 
 const BUTTON_HEIGHT: f32 = GameOptions::TILE_SIZE;
 const BUTTON_WIDTH: f32 = BUTTON_HEIGHT * 5.0;
-const BUTTON_BORDER: f32 = GameOptions::TILE_PADDING / 2.0;
-const BUTTON_PADDING: f32 = GameOptions::TILE_PADDING * 2.0;
+const BUTTON_BORDER: f32 = GameOptions::TILE_PADDING;
 
 pub struct MenuPlugin;
 
@@ -30,7 +30,11 @@ enum MenuButton {
     Leaderboard,
 }
 
-fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn setup(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    q_footer: Query<Entity, With<Footer>>,
+) {
     let font = asset_server.load("fonts/ThinPixel7.ttf");
     let text_style = TextStyle {
         font: font.clone(),
@@ -38,22 +42,24 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         color: Color::DARK_GRAY,
     };
 
-    commands
-        .spawn(NodeBundle {
-            style: Style {
-                width: Val::Percent(100.0),
-                align_items: AlignItems::End,
-                justify_content: JustifyContent::Center,
-                align_self: AlignSelf::End,
-                padding: UiRect::bottom(Val::Px(BUTTON_PADDING)),
+    let footer = q_footer.get_single().expect("Footer not found");
+
+    commands.entity(footer).with_children(|footer| {
+        footer
+            .spawn(NodeBundle {
+                style: Style {
+                    width: Val::Percent(100.0),
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    ..default()
+                },
                 ..default()
-            },
-            ..default()
-        })
-        .with_children(|parent| {
-            spawn_button(parent, &text_style, "Restart", MenuButton::Restart);
-            spawn_button(parent, &text_style, "Leaderboard", MenuButton::Leaderboard);
-        });
+            })
+            .with_children(|parent| {
+                spawn_button(parent, &text_style, "Restart", MenuButton::Restart);
+                spawn_button(parent, &text_style, "Leaderboard", MenuButton::Leaderboard);
+            });
+    });
 }
 
 fn spawn_button(
@@ -75,7 +81,7 @@ fn spawn_button(
                 margin: UiRect::horizontal(Val::Px(BUTTON_BORDER)),
                 ..default()
             },
-            border_color: BorderColor(BUTTON_BORDER_COLOR),
+            border_color: BUTTON_BORDER_COLOR.into(),
             background_color: NORMAL_BUTTON.into(),
             ..default()
         })

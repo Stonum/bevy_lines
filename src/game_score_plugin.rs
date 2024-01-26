@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 use crate::events::IncrementCurrentGameScore;
+use crate::layout::{HeaderLeft, HeaderRight};
 use crate::leader_board_plugin::LeaderBoard;
 use crate::GameOptions;
 use crate::GameState;
@@ -29,9 +30,10 @@ impl Plugin for GameScorePlugin {
 }
 
 fn spawn_score_fields(
-    game: Res<GameScore>,
-    asset_server: Res<AssetServer>,
     mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    l_header: Query<Entity, With<HeaderLeft>>,
+    r_header: Query<Entity, With<HeaderRight>>,
 ) {
     let font = asset_server.load("fonts/Glitch-Demo.ttf");
     let text_style = TextStyle {
@@ -40,38 +42,34 @@ fn spawn_score_fields(
         color: Color::GREEN,
     };
 
-    let position_y = GameOptions::BOARD_SIZE / 2. + GameOptions::TILE_SIZE * 1.1;
-    let position_x = GameOptions::TILE_SIZE * 4.;
+    let l_header = l_header.get_single().expect("Header left not found");
+    let r_header = r_header.get_single().expect("Header right not found");
 
-    commands.spawn((
-        Text2dBundle {
-            text: Text {
-                sections: vec![TextSection::new(
-                    format!("{:0>5}", game.current_score),
-                    text_style.clone(),
-                )],
-                ..Default::default()
+    commands.entity(l_header).with_children(|header| {
+        header.spawn((
+            TextBundle {
+                text: Text {
+                    sections: vec![TextSection::new("", text_style.clone())],
+                    ..default()
+                },
+                ..default()
             },
-            transform: Transform::from_xyz(position_x, position_y, 0.),
-            ..default()
-        },
-        CurrentScore,
-    ));
+            BestScore,
+        ));
+    });
 
-    commands.spawn((
-        Text2dBundle {
-            text: Text {
-                sections: vec![TextSection::new(
-                    format!("{:0>5}", game.current_score),
-                    text_style,
-                )],
-                ..Default::default()
+    commands.entity(r_header).with_children(|header| {
+        header.spawn((
+            TextBundle {
+                text: Text {
+                    sections: vec![TextSection::new("", text_style)],
+                    ..default()
+                },
+                ..default()
             },
-            transform: Transform::from_xyz(-position_x, position_y, 0.),
-            ..default()
-        },
-        BestScore,
-    ));
+            CurrentScore,
+        ));
+    });
 }
 
 fn render_score_text(

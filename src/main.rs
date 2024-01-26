@@ -4,6 +4,7 @@
 mod board_plugin;
 mod events;
 mod game_score_plugin;
+pub mod layout;
 mod leader_board_plugin;
 mod menu_plugin;
 
@@ -13,6 +14,7 @@ use bevy_embedded_assets::EmbeddedAssetPlugin;
 use board_plugin::BoardPlugin;
 use events::*;
 use game_score_plugin::GameScorePlugin;
+use layout::LayoutPlugin;
 use leader_board_plugin::LeaderBoardPlugin;
 use menu_plugin::MenuPlugin;
 
@@ -28,7 +30,7 @@ pub enum GameState {
 pub struct GameOptions;
 impl GameOptions {
     pub const TILE_SIZE: f32 = 45.0;
-    pub const TILE_PADDING: f32 = 5.0;
+    pub const TILE_PADDING: f32 = 2.5;
     pub const TILE_COUNT: u8 = 9;
     pub const BOARD_SIZE: f32 = GameOptions::TILE_SIZE * GameOptions::TILE_COUNT as f32;
     pub const BALL_SIZE: f32 = 35.0;
@@ -65,7 +67,13 @@ fn main() {
     app.insert_resource(ClearColor(Color::BLACK));
     app.add_event::<IncrementCurrentGameScore>();
 
-    app.add_plugins((BoardPlugin, LeaderBoardPlugin, GameScorePlugin, MenuPlugin));
+    app.add_plugins((
+        LayoutPlugin,
+        BoardPlugin,
+        LeaderBoardPlugin,
+        GameScorePlugin,
+        MenuPlugin,
+    ));
 
     app.add_systems(Startup, spawn_camera).run();
 }
