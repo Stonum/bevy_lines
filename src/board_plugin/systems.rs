@@ -3,6 +3,7 @@ use bevy::window::PrimaryWindow;
 use std::cmp::Ordering;
 
 use crate::events::IncrementCurrentGameScore;
+use crate::layout::Main;
 use crate::GameOptions;
 use crate::GameState;
 
@@ -10,37 +11,60 @@ use super::ball::*;
 use super::board::*;
 use super::events::*;
 use super::next_balls_plugin::*;
+use super::BoardTile;
 use super::Coordinates;
 
 pub fn spawn_board(
     mut board: ResMut<Board>,
     mut commands: Commands,
+    main: Query<Entity, With<Main>>,
     mut ev_spawn_balls: EventWriter<SpawnNewBallEvent>,
 ) {
-    let entity = commands
-        // board background
-        .spawn((SpriteBundle {
-            sprite: Sprite {
-                color: GameOptions::BOARD_COLOR,
-                custom_size: Some(Vec2::splat(GameOptions::BOARD_SIZE)),
+    let main = main.get_single().expect("Main not found");
+
+    commands.entity(main).with_children(|main| {
+        let mut board_bundle = main.spawn(NodeBundle {
+            style: Style {
+                display: Display::Grid,
+                grid_auto_flow: GridAutoFlow::Column,
+
+                width: Val::Px(GameOptions::BOARD_SIZE),
+                height: Val::Px(GameOptions::BOARD_SIZE),
+
+                grid_template_columns: vec![GridTrack::flex(1.0); 9],
+                grid_template_rows: vec![GridTrack::flex(1.0); 9],
+
+                justify_content: JustifyContent::Center,
+                align_content: AlignContent::Center,
+                align_items: AlignItems::Center,
                 ..default()
             },
+            background_color: GameOptions::BOARD_COLOR.into(),
             ..default()
-        },))
+        });
+
         // board tiles
-        .with_children(|parent| {
-            for coord in board.tiles_map.keys() {
-                parent.spawn(SpriteBundle {
-                    sprite: Sprite {
-                        color: GameOptions::TILE_COLOR,
-                        custom_size: Some(Vec2::splat(
-                            GameOptions::TILE_SIZE - GameOptions::TILE_PADDING,
-                        )),
+        board_bundle.with_children(|parent| {
+            let mut coordinates: Vec<&Coordinates> = board.tiles_map.keys().into_iter().collect();
+            coordinates.sort();
+
+            for coordinate in coordinates {
+                parent
+                    .spawn(NodeBundle {
+                        style: Style {
+                            width: Val::Px(GameOptions::TILE_SIZE),
+                            height: Val::Px(GameOptions::TILE_SIZE),
+                            border: UiRect::all(Val::Px(GameOptions::TILE_PADDING)),
+                            justify_content: JustifyContent::Center,
+                            align_items: AlignItems::Center,
+                            ..default()
+                        },
+                        border_color: GameOptions::BOARD_COLOR.into(),
+                        background_color: GameOptions::TILE_COLOR.into(),
                         ..default()
-                    },
-                    transform: Transform::from_translation(Vec2::from(*coord).extend(1.)),
-                    ..default()
-                });
+                    })
+                    .insert(*coordinate)
+                    .insert(BoardTile);
             }
 
             // spawn startup balls
@@ -48,11 +72,10 @@ pub fn spawn_board(
                 let ball_color = BallColor::new();
                 ev_spawn_balls.send(SpawnNewBallEvent(ball_color));
             }
-        })
-        .insert(Name::new("Board"))
-        .id();
+        });
 
-    board.entity = Some(entity);
+        board.entity = Some(board_bundle.id());
+    });
 }
 
 pub fn spawn_animation_timer(mut commands: Commands) {
@@ -75,8 +98,9 @@ pub fn handle_mouse_clicks(
     mut board: ResMut<Board>,
     mut commands: Commands,
     q_windows: Query<&Window, With<PrimaryWindow>>,
-    mut q_balls: Query<(&mut Coordinates, &mut Transform), With<Ball>>,
+    mut q_balls: Query<(&mut Coordinates, &mut Style), With<Ball>>,
     query_next_ball: Query<&NextBall, With<NextBall>>,
+    query_tile: Query<(&Coordinates, Entity), (With<BoardTile>, Without<Ball>)>,
     mut ev_spawn_balls: EventWriter<SpawnNewBallEvent>,
     mut ev_change_next: EventWriter<ChangeNextBallsEvent>,
     mut ev_inc_score: EventWriter<IncrementCurrentGameScore>,
@@ -104,10 +128,8 @@ pub fn handle_mouse_clicks(
             (Some(active_ball), Some(ball)) if active_ball != ball.entity => {
                 commands.entity(active_ball).remove::<BallAnimationState>();
                 // fix ball position after stop animation
-                if let Ok((coordinates, mut transform)) = q_balls.get_mut(active_ball) {
-                    let Vec2 { x, y } = Vec2::from(*coordinates);
-                    transform.translation.x = x;
-                    transform.translation.y = y;
+                if let Ok((_, mut style)) = q_balls.get_mut(active_ball) {
+                    style.top = Val::Auto;
                 }
                 commands
                     .entity(ball.entity)
@@ -116,7 +138,7 @@ pub fn handle_mouse_clicks(
             }
             // move active ball to new position
             (Some(active_ball), None) => {
-                if let Ok((mut coordinates, _)) = q_balls.get_mut(active_ball) {
+                if let Ok((mut coordinates, mut style)) = q_balls.get_mut(active_ball) {
                     if coordinates.partial_cmp(&next_coordinates) != Some(Ordering::Equal)
                         && board
                             .get_path_to_move(&coordinates, &next_coordinates)
@@ -129,6 +151,15 @@ pub fn handle_mouse_clicks(
                         board.tiles_map.insert(next_coordinates, ball_entity);
 
                         commands.entity(active_ball).remove::<BallAnimationState>();
+                        style.top = Val::Auto;
+
+                        // set new parent tile for ball
+                        for (tile_coord, tile_entity) in query_tile.iter() {
+                            if *tile_coord == next_coordinates {
+                                commands.entity(active_ball).set_parent(tile_entity);
+                            }
+                        }
+
                         board.active_ball = None;
 
                         // change coordinates
@@ -189,20 +220,20 @@ fn despawn_balls_and_inc_score(
 
 pub fn animate_ball_system(
     time: Res<Time>,
-    mut query_animated_ball: Query<(&mut Transform, &mut BallAnimationState)>,
+    mut query_animated_ball: Query<(&mut Style, &mut BallAnimationState)>,
     mut query_timer: Query<&mut BallAnimationTimer>,
 ) {
-    for ((mut transform, mut state), mut timer) in
+    for ((mut style, mut state), mut timer) in
         query_animated_ball.iter_mut().zip(query_timer.iter_mut())
     {
         if timer.tick(time.delta()).just_finished() {
             match *state {
                 BallAnimationState::Up => {
-                    transform.translation.y += 4.;
+                    style.top = Val::Px(3.0);
                     *state = BallAnimationState::Down;
                 }
                 BallAnimationState::Down => {
-                    transform.translation.y -= 4.;
+                    style.top = Val::Px(-3.0);
                     *state = BallAnimationState::Up;
                 }
             }
@@ -214,43 +245,43 @@ pub fn spawn_new_ball(
     mut board: ResMut<Board>,
     ball_assets: Res<BallAssets>,
     mut commands: Commands,
+    q_board_tile: Query<(&Coordinates, Entity), With<BoardTile>>,
     mut ev_spawn_balls: EventReader<SpawnNewBallEvent>,
     mut game_state: ResMut<NextState<GameState>>,
 ) {
-    for ev in ev_spawn_balls.iter() {
-        if let Some(entity) = board.entity {
-            let coord = match board.get_free_tile() {
-                Some(free_coordinates) => free_coordinates,
-                None => {
-                    game_state.set(GameState::GameOver);
-                    return;
-                }
-            };
-            let color = ev.0;
+    for SpawnNewBallEvent(color) in ev_spawn_balls.iter() {
+        let coord = match board.get_free_tile() {
+            Some(free_coordinates) => free_coordinates,
+            None => {
+                game_state.set(GameState::GameOver);
+                return;
+            }
+        };
 
-            commands.entity(entity).with_children(|parent| {
+        if let Some((_, tile)) = q_board_tile.iter().find(|(c, _)| **c == coord) {
+            commands.entity(tile).with_children(|parent| {
                 let entity = parent
-                    .spawn(SpriteBundle {
-                        texture: ball_assets.texture.clone(),
-                        sprite: Sprite {
-                            custom_size: Some(Vec2::splat(GameOptions::BALL_SIZE)),
-                            color: color.into(),
+                    .spawn(ImageBundle {
+                        style: Style {
+                            width: Val::Px(GameOptions::BALL_SIZE),
+                            height: Val::Px(GameOptions::BALL_SIZE),
                             ..default()
                         },
-                        transform: Transform::from_translation(Vec2::from(coord).extend(2.)),
+                        background_color: BackgroundColor(Color::from(*color)),
+                        image: UiImage::new(ball_assets.texture.clone()),
                         ..default()
                     })
-                    .insert(Name::from("Ball"))
                     .insert(Ball)
-                    .insert(color)
+                    .insert(*color)
                     .insert(coord)
                     .id();
 
                 board
                     .tiles_map
-                    .insert(coord, Some(BallEntity::new(color, entity)));
+                    .insert(coord, Some(BallEntity::new(*color, entity)));
             });
         }
+
         if board.get_free_tile().is_none() {
             game_state.set(GameState::GameOver);
         };
