@@ -9,6 +9,7 @@ use crate::game_score_plugin::GameScore;
 use crate::layout::Main;
 use crate::GameOptions;
 use crate::GameState;
+use crate::LeaderBoardState;
 
 const LINE_COLOR: Color = GameOptions::TILE_COLOR;
 const LINE_BORDER_COLOR: Color = GameOptions::BOARD_COLOR;
@@ -26,8 +27,8 @@ impl Plugin for LeaderBoardPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(LeaderBoard::new())
             .add_systems(OnEnter(GameState::GameOver), change_leaders)
-            .add_systems(OnEnter(GameState::Leaderboard), spawn_leader_board)
-            .add_systems(OnExit(GameState::Leaderboard), despawn_leader_board);
+            .add_systems(OnEnter(LeaderBoardState::Show), spawn_leader_board)
+            .add_systems(OnExit(LeaderBoardState::Show), despawn_leader_board);
     }
 }
 
@@ -131,14 +132,14 @@ impl LeaderBoard {
 pub fn change_leaders(
     mut leader_board: ResMut<LeaderBoard>,
     game_score: Res<GameScore>,
-    mut game_state: ResMut<NextState<GameState>>,
+    mut state: ResMut<NextState<LeaderBoardState>>,
 ) {
     if let Some(score) = leader_board.get_lowest_score() {
         if game_score.current_score > score {
             leader_board.add_player("new player".into(), game_score.current_score);
         }
     }
-    game_state.set(GameState::Leaderboard);
+    state.set(LeaderBoardState::Show);
 }
 
 fn spawn_leader_board(
@@ -159,12 +160,14 @@ fn spawn_leader_board(
     commands.entity(main).with_children(|main| {
         main.spawn(NodeBundle {
             style: Style {
+                position_type: PositionType::Absolute,
                 flex_direction: FlexDirection::Column,
                 width: Val::Percent(100.0),
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
                 ..default()
             },
+            z_index: ZIndex::Global(100),
             ..default()
         })
         .with_children(|parent| {

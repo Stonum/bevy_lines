@@ -54,7 +54,7 @@ impl TryFrom<Vec2> for Coordinates {
         let window_size = Vec2::new(GameOptions::WINDOW_WIDTH, GameOptions::WINDOW_HEIGHT);
         let position = pos - window_size / 2.;
         let size = GameOptions::BOARD_SIZE / 2.;
-        dbg!(position + size);
+
         if size < position.x.abs() || size < position.y.abs() {
             return Err("Cursor position out of bounds");
         }

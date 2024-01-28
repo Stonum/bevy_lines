@@ -3,7 +3,6 @@ use bevy::prelude::*;
 use crate::events::IncrementCurrentGameScore;
 use crate::layout::{HeaderLeft, HeaderRight};
 use crate::leader_board_plugin::LeaderBoard;
-use crate::GameOptions;
 use crate::GameState;
 
 pub struct GameScorePlugin;

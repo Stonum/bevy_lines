@@ -24,7 +24,13 @@ pub enum GameState {
     Playing,
     GameOver,
     Restarting,
-    Leaderboard,
+}
+
+#[derive(States, Default, Clone, Eq, PartialEq, Debug, Hash)]
+pub enum LeaderBoardState {
+    #[default]
+    Hide,
+    Show,
 }
 
 pub struct GameOptions;
@@ -44,25 +50,27 @@ impl GameOptions {
 
 fn main() {
     let mut app = App::new();
-    app.add_state::<GameState>().add_plugins(
-        DefaultPlugins
-            .set(WindowPlugin {
-                primary_window: Some(Window {
-                    title: "Lines".into(),
-                    resolution: (GameOptions::WINDOW_WIDTH, GameOptions::WINDOW_HEIGHT).into(),
-                    // Bind to canvas included in `index.html`
-                    canvas: Some("#bevy".to_owned()),
-                    // The canvas size is constrained in index.html and build/web/styles.css
-                    fit_canvas_to_parent: true,
-                    // Tells wasm not to override default event handling, like F5 and Ctrl+R
-                    prevent_default_event_handling: false,
+    app.add_state::<GameState>()
+        .add_state::<LeaderBoardState>()
+        .add_plugins(
+            DefaultPlugins
+                .set(WindowPlugin {
+                    primary_window: Some(Window {
+                        title: "Lines".into(),
+                        resolution: (GameOptions::WINDOW_WIDTH, GameOptions::WINDOW_HEIGHT).into(),
+                        // Bind to canvas included in `index.html`
+                        canvas: Some("#bevy".to_owned()),
+                        // The canvas size is constrained in index.html and build/web/styles.css
+                        fit_canvas_to_parent: true,
+                        // Tells wasm not to override default event handling, like F5 and Ctrl+R
+                        prevent_default_event_handling: false,
+                        ..default()
+                    }),
                     ..default()
-                }),
-                ..default()
-            })
-            .build()
-            .add_before::<bevy::asset::AssetPlugin, _>(EmbeddedAssetPlugin),
-    );
+                })
+                .build()
+                .add_before::<bevy::asset::AssetPlugin, _>(EmbeddedAssetPlugin),
+        );
 
     app.insert_resource(ClearColor(Color::BLACK));
     app.add_event::<IncrementCurrentGameScore>();

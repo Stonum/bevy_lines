@@ -4,6 +4,7 @@ use bevy::prelude::*;
 use crate::layout::Footer;
 use crate::GameOptions;
 use crate::GameState;
+use crate::LeaderBoardState;
 
 const NORMAL_BUTTON: Color = GameOptions::TILE_COLOR;
 const HOVERED_BUTTON: Color = Color::rgb(0.80, 0.80, 0.80);
@@ -96,15 +97,20 @@ fn button_system(
         (&Interaction, &mut BackgroundColor, &MenuButton),
         (Changed<Interaction>, With<MenuButton>),
     >,
-    mut game_state: ResMut<NextState<GameState>>,
+    current_leaders_state: Res<State<LeaderBoardState>>,
+    mut next_game_state: ResMut<NextState<GameState>>,
+    mut next_leaders_state: ResMut<NextState<LeaderBoardState>>,
 ) {
     for (interaction, mut color, button_type) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
                 *color = PRESSED_BUTTON.into();
                 match *button_type {
-                    MenuButton::Restart => game_state.set(GameState::Restarting),
-                    MenuButton::Leaderboard => game_state.set(GameState::Leaderboard),
+                    MenuButton::Restart => next_game_state.set(GameState::Restarting),
+                    MenuButton::Leaderboard => match current_leaders_state.get() {
+                        LeaderBoardState::Hide => next_leaders_state.set(LeaderBoardState::Show),
+                        _ => next_leaders_state.set(LeaderBoardState::Hide),
+                    },
                 }
             }
             Interaction::Hovered => *color = HOVERED_BUTTON.into(),
