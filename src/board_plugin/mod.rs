@@ -28,20 +28,21 @@ impl Plugin for BoardPlugin {
         app.add_event::<SpawnNewBallEvent>();
         app.add_event::<ChangeNextBallsEvent>();
 
-        app.add_systems(
-            OnEnter(GameState::Playing),
-            (spawn_board, spawn_animation_timer),
-        )
-        .add_systems(
-            Update,
-            (
-                render_balls,
-                animate_ball_system,
-                spawn_new_ball,
-                handle_mouse_clicks,
-            ),
-        )
-        .add_systems(OnExit(GameState::Playing), despawn_board);
+        app.add_systems(Startup, spawn_board)
+            .add_systems(
+                OnEnter(GameState::Playing),
+                (spawn_startup_balls, spawn_animation_timer),
+            )
+            .add_systems(
+                Update,
+                (
+                    render_balls,
+                    animate_ball_system,
+                    spawn_new_ball,
+                    handle_mouse_clicks,
+                ),
+            )
+            .add_systems(OnExit(GameState::Playing), despawn_board_balls);
     }
 }
 

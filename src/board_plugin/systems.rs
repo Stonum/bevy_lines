@@ -18,7 +18,6 @@ pub fn spawn_board(
     mut board: ResMut<Board>,
     mut commands: Commands,
     main: Query<Entity, With<Main>>,
-    mut ev_spawn_balls: EventWriter<SpawnNewBallEvent>,
 ) {
     let main = main.get_single().expect("Main not found");
 
@@ -66,16 +65,16 @@ pub fn spawn_board(
                     .insert(*coordinate)
                     .insert(BoardTile);
             }
-
-            // spawn startup balls
-            for _ in 0..3 {
-                let ball_color = BallColor::new();
-                ev_spawn_balls.send(SpawnNewBallEvent(ball_color));
-            }
         });
-
-        board.entity = Some(board_bundle.id());
     });
+}
+
+pub fn spawn_startup_balls(mut ev_spawn_balls: EventWriter<SpawnNewBallEvent>) {
+    // spawn startup balls
+    for _ in 0..3 {
+        let ball_color = BallColor::new();
+        ev_spawn_balls.send(SpawnNewBallEvent(ball_color));
+    }
 }
 
 pub fn spawn_animation_timer(mut commands: Commands) {
@@ -288,12 +287,16 @@ pub fn spawn_new_ball(
     }
 }
 
-pub fn despawn_board(mut commands: Commands, mut board: ResMut<Board>) {
-    if let Some(entity) = board.entity {
+pub fn despawn_board_balls(
+    mut commands: Commands,
+    mut board: ResMut<Board>,
+    query_balls: Query<Entity, &Ball>,
+) {
+    for entity in query_balls.iter() {
         commands.entity(entity).despawn_recursive();
-        board.entity = None;
-        for (_coord, ball) in board.tiles_map.iter_mut() {
-            *ball = None;
-        }
+    }
+
+    for (_coord, ball) in board.tiles_map.iter_mut() {
+        *ball = None;
     }
 }

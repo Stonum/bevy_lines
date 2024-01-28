@@ -106,7 +106,10 @@ fn button_system(
             Interaction::Pressed => {
                 *color = PRESSED_BUTTON.into();
                 match *button_type {
-                    MenuButton::Restart => next_game_state.set(GameState::Restarting),
+                    MenuButton::Restart => {
+                        next_game_state.set(GameState::Restarting);
+                        next_leaders_state.set(LeaderBoardState::Hide);
+                    }
                     MenuButton::Leaderboard => match current_leaders_state.get() {
                         LeaderBoardState::Hide => next_leaders_state.set(LeaderBoardState::Show),
                         _ => next_leaders_state.set(LeaderBoardState::Hide),

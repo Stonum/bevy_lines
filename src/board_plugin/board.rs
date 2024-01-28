@@ -9,7 +9,6 @@ use super::Coordinates;
 
 #[derive(Resource)]
 pub struct Board {
-    pub entity: Option<Entity>,
     pub tiles_map: HashMap<Coordinates, Option<BallEntity>>,
     pub active_ball: Option<Entity>,
 }
@@ -24,7 +23,6 @@ impl Default for Board {
         }
 
         Self {
-            entity: None,
             active_ball: None,
             tiles_map: tiles,
         }
