@@ -6,7 +6,7 @@ use js_sys::JSON;
 use wasm_bindgen::prelude::*;
 
 use crate::game_score_plugin::GameScore;
-use crate::layout::Main;
+use crate::layout::MainCenter;
 use crate::GameOptions;
 use crate::GameState;
 use crate::LeaderBoardState;
@@ -127,6 +127,10 @@ impl LeaderBoard {
         self.players.truncate(MAX_PLAYERS);
         Self::set_to_local_storage(&self.players);
     }
+
+    pub fn get_best_player(&self) -> Option<String> {
+        self.players.iter().max_by_key(|x| x.1).map(|x| x.0.clone())
+    }
 }
 
 pub fn change_leaders(
@@ -146,7 +150,7 @@ fn spawn_leader_board(
     mut commands: Commands,
     leader_board: Res<LeaderBoard>,
     asset_server: Res<AssetServer>,
-    q_main: Query<Entity, With<Main>>,
+    q_main: Query<Entity, With<MainCenter>>,
 ) {
     let font = asset_server.load("fonts/ThinPixel7.ttf");
     let text_style = TextStyle {
@@ -164,6 +168,7 @@ fn spawn_leader_board(
                 flex_direction: FlexDirection::Column,
                 width: Val::Percent(100.0),
                 align_items: AlignItems::Center,
+                align_self: AlignSelf::Start,
                 justify_content: JustifyContent::Center,
                 ..default()
             },

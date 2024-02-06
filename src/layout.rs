@@ -23,6 +23,15 @@ pub struct HeaderRight;
 pub struct Main;
 
 #[derive(Component)]
+pub struct MainLeft;
+
+#[derive(Component)]
+pub struct MainCenter;
+
+#[derive(Component)]
+pub struct MainRight;
+
+#[derive(Component)]
 pub struct Footer;
 
 fn setup(mut commands: Commands) {
@@ -52,9 +61,13 @@ fn setup(mut commands: Commands) {
                     style: Style {
                         display: Display::Grid,
                         align_items: AlignItems::Center,
-                        // Make this node span two grid columns so that it takes up the entire top tow
+
                         grid_column: GridPlacement::span(1),
-                        grid_template_columns: vec![GridTrack::flex(1.0); 3],
+                        grid_template_columns: vec![
+                            GridTrack::percent(25.0),
+                            GridTrack::flex(1.0),
+                            GridTrack::percent(25.0),
+                        ],
                         ..default()
                     },
                     ..default()
@@ -64,8 +77,7 @@ fn setup(mut commands: Commands) {
                     builder
                         .spawn(NodeBundle {
                             style: Style {
-                                grid_column: GridPlacement::span(1),
-                                justify_content: JustifyContent::End,
+                                justify_content: JustifyContent::Center,
                                 ..default()
                             },
                             ..default()
@@ -75,7 +87,6 @@ fn setup(mut commands: Commands) {
                     builder
                         .spawn(NodeBundle {
                             style: Style {
-                                grid_column: GridPlacement::span(1),
                                 justify_content: JustifyContent::Center,
                                 ..default()
                             },
@@ -86,8 +97,7 @@ fn setup(mut commands: Commands) {
                     builder
                         .spawn(NodeBundle {
                             style: Style {
-                                grid_column: GridPlacement::span(1),
-                                justify_content: JustifyContent::Start,
+                                justify_content: JustifyContent::Center,
                                 ..default()
                             },
                             ..default()
@@ -99,14 +109,54 @@ fn setup(mut commands: Commands) {
             builder
                 .spawn(NodeBundle {
                     style: Style {
+                        display: Display::Grid,
                         height: Val::Percent(100.0),
-                        align_items: AlignItems::Center,
-                        justify_content: JustifyContent::Center,
+
+                        grid_column: GridPlacement::span(1),
+                        grid_template_columns: vec![
+                            GridTrack::percent(25.0),
+                            GridTrack::flex(1.0),
+                            GridTrack::percent(25.0),
+                        ],
                         ..default()
                     },
                     ..default()
                 })
-                .insert(Main);
+                .insert(Main)
+                .with_children(|builder| {
+                    builder
+                        .spawn(NodeBundle {
+                            style: Style {
+                                justify_content: JustifyContent::Center,
+                                align_items: AlignItems::End,
+                                ..default()
+                            },
+                            ..default()
+                        })
+                        .insert(MainLeft);
+
+                    builder
+                        .spawn(NodeBundle {
+                            style: Style {
+                                justify_content: JustifyContent::Center,
+                                align_items: AlignItems::Center,
+                                ..default()
+                            },
+                            ..default()
+                        })
+                        .insert(MainCenter);
+
+                    builder
+                        .spawn(NodeBundle {
+                            style: Style {
+                                justify_content: JustifyContent::Center,
+                                align_items: AlignItems::End,
+                                ..default()
+                            },
+                            ..default()
+                        })
+                        .insert(MainRight);
+                });
 
             // Footer
             builder

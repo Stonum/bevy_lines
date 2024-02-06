@@ -3,7 +3,7 @@ use bevy::window::PrimaryWindow;
 use std::cmp::Ordering;
 
 use crate::events::IncrementCurrentGameScore;
-use crate::layout::Main;
+use crate::layout::MainCenter;
 use crate::GameOptions;
 use crate::GameState;
 
@@ -15,9 +15,9 @@ use super::BoardTile;
 use super::Coordinates;
 
 pub fn spawn_board(
-    mut board: ResMut<Board>,
+    board: ResMut<Board>,
     mut commands: Commands,
-    main: Query<Entity, With<Main>>,
+    main: Query<Entity, With<MainCenter>>,
 ) {
     let main = main.get_single().expect("Main not found");
 

@@ -41,7 +41,7 @@ impl GameOptions {
     pub const BOARD_SIZE: f32 = GameOptions::TILE_SIZE * GameOptions::TILE_COUNT as f32;
     pub const BALL_SIZE: f32 = 35.0;
     pub const MIN_BALLS_ON_LINE: usize = 5;
-    pub const WINDOW_WIDTH: f32 = 800.;
+    pub const WINDOW_WIDTH: f32 = 900.;
     pub const WINDOW_HEIGHT: f32 = 600.;
 
     pub const BOARD_COLOR: Color = Color::rgb(0.53, 0.53, 0.53);
