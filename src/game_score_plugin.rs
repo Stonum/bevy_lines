@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::events::IncrementCurrentGameScore;
 use crate::layout::{HeaderLeft, HeaderRight, MainLeft, MainRight};
 use crate::leader_board_plugin::LeaderBoard;
-use crate::GameState;
+use crate::{GameOptions, GameState};
 
 pub struct GameScorePlugin;
 
@@ -230,15 +230,15 @@ fn podium_system(
         let mut leader = q_leader_podium.single_mut();
         let mut contender = q_contender_podium.single_mut();
 
-        leader.height = Val::Percent(100.0);
-        contender.height = Val::Percent(0.0);
+        let hight_100 = (GameOptions::TILE_SIZE + GameOptions::TILE_PADDING * 2.0) * 4.0;
 
         if game.current_score < game.best_score {
+            leader.height = Val::Px(hight_100);
             contender.height =
-                Val::Percent(game.current_score as f32 / game.best_score as f32 * 100.0);
+                Val::Px(game.current_score as f32 / game.best_score as f32 * hight_100);
         } else {
-            leader.height =
-                Val::Percent(game.best_score as f32 / game.current_score as f32 * 100.0);
+            leader.height = Val::Px(game.best_score as f32 / game.current_score as f32 * hight_100);
+            contender.height = Val::Px(hight_100);
         }
     }
 }

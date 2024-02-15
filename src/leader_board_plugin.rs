@@ -159,7 +159,7 @@ fn spawn_leader_board(
         color: Color::DARK_GRAY,
     };
 
-    let main = q_main.get_single().expect("Main not find");
+    let main = q_main.get_single().expect("Main not found");
 
     commands.entity(main).with_children(|main| {
         main.spawn(NodeBundle {
