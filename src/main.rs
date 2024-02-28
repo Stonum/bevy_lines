@@ -7,9 +7,9 @@ mod game_score_plugin;
 pub mod layout;
 mod leader_board_plugin;
 mod menu_plugin;
-
 use bevy::prelude::*;
 use bevy_embedded_assets::EmbeddedAssetPlugin;
+use bevy_simple_text_input::TextInputPlugin;
 
 use board_plugin::BoardPlugin;
 use events::*;
@@ -31,6 +31,7 @@ pub enum LeaderBoardState {
     #[default]
     Hide,
     Show,
+    InputName,
 }
 
 pub struct GameOptions;
@@ -70,7 +71,8 @@ fn main() {
                 })
                 .build()
                 .add_before::<bevy::asset::AssetPlugin, _>(EmbeddedAssetPlugin),
-        );
+        )
+        .add_plugins(TextInputPlugin);
 
     app.insert_resource(ClearColor(Color::BLACK));
     app.add_event::<IncrementCurrentGameScore>();

@@ -6,6 +6,7 @@ edition = "2021"
 
 [dependencies]
 bevy_embedded_assets = "0.8.0"
+bevy_simple_text_input = "0.2.0"
 rand = "0.8.5"
 
 [dependencies.bevy]

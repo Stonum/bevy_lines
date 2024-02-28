@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_simple_text_input::{TextInput, TextInputSubmitEvent};
 
 #[cfg(target_arch = "wasm32")]
 use js_sys::JSON;
@@ -27,14 +28,18 @@ impl Plugin for LeaderBoardPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(LeaderBoard::new())
             .add_systems(OnEnter(GameState::GameOver), change_leaders)
+            .add_systems(OnEnter(LeaderBoardState::InputName), spawn_leader_board)
             .add_systems(OnEnter(LeaderBoardState::Show), spawn_leader_board)
-            .add_systems(OnExit(LeaderBoardState::Show), despawn_leader_board);
+            .add_systems(OnEnter(LeaderBoardState::Hide), despawn_leader_board)
+            .add_systems(Update, input_field_listener);
     }
 }
 
+type Player = (Option<String>, u32);
+
 #[derive(Resource, Debug)]
 pub struct LeaderBoard {
-    pub players: Vec<(String, u32)>,
+    pub players: Vec<Player>,
 }
 
 #[derive(Component)]
@@ -42,11 +47,11 @@ struct LeaderBoardNode;
 
 impl LeaderBoard {
     pub fn new() -> Self {
-        let mut players: Vec<(String, u32)> = match Self::get_from_local_storage() {
+        let mut players: Vec<Player> = match Self::get_from_local_storage() {
             Some(players) => players,
             None => (1..=MAX_PLAYERS)
                 .into_iter()
-                .map(|x| ("Player ".to_string() + &x.to_string(), (x * 100) as u32))
+                .map(|x| (Some("Player ".to_string() + &x.to_string()), (x * 1) as u32))
                 .collect(),
         };
 
@@ -56,12 +61,12 @@ impl LeaderBoard {
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    fn get_from_local_storage() -> Option<Vec<(String, u32)>> {
+    fn get_from_local_storage() -> Option<Vec<Player>> {
         None
     }
 
     #[cfg(target_arch = "wasm32")]
-    fn get_from_local_storage() -> Option<Vec<(String, u32)>> {
+    fn get_from_local_storage() -> Option<Vec<Player>> {
         let window = web_sys::window()?;
         let local_storage = window.local_storage().ok()??;
         let mut players = Vec::with_capacity(10);
@@ -75,7 +80,7 @@ impl LeaderBoard {
                 let name = item_array.shift().as_string();
                 let score = item_array.shift().as_f64();
                 if let (Some(name), Some(score)) = (name, score) {
-                    players.push((name, score as u32));
+                    players.push((Some(name), score as u32));
                 }
             }
         }
@@ -88,19 +93,19 @@ impl LeaderBoard {
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    fn set_to_local_storage(_players: &Vec<(String, u32)>) -> Option<()> {
+    fn set_to_local_storage(_players: &Vec<Player>) -> Option<()> {
         None
     }
 
     #[cfg(target_arch = "wasm32")]
-    fn set_to_local_storage(players: &Vec<(String, u32)>) -> Option<()> {
+    fn set_to_local_storage(players: &Vec<Player>) -> Option<()> {
         let window = web_sys::window()?;
         let local_storage = window.local_storage().ok()??;
 
         let array = js_sys::Array::new();
         for player in players {
             let item = js_sys::Array::new();
-            item.push(&JsValue::from(&player.0));
+            item.push(&JsValue::from(player.0.clone()));
             item.push(&JsValue::from(player.1));
             array.push(&JsValue::from(item));
         }
@@ -121,15 +126,29 @@ impl LeaderBoard {
         self.players.iter().map(|x| x.1).min()
     }
 
-    pub fn add_player(&mut self, name: String, score: u32) {
-        self.players.push((name, score));
+    pub fn add_player(&mut self, score: u32) {
+        self.players.push((None, score));
         self.players.sort_by_key(|x| !x.1);
         self.players.truncate(MAX_PLAYERS);
         Self::set_to_local_storage(&self.players);
     }
 
+    pub fn set_name(&mut self, name: String) {
+        self.players
+            .iter_mut()
+            .filter(|x| x.0.is_none())
+            .for_each(|x| {
+                x.0 = Some(name.clone());
+            });
+        Self::set_to_local_storage(&self.players);
+    }
+
     pub fn get_best_player(&self) -> Option<String> {
-        self.players.iter().max_by_key(|x| x.1).map(|x| x.0.clone())
+        self.players
+            .iter()
+            .max_by_key(|x| x.1)
+            .map(|(name, _)| name.clone())
+            .flatten()
     }
 }
 
@@ -140,7 +159,9 @@ pub fn change_leaders(
 ) {
     if let Some(score) = leader_board.get_lowest_score() {
         if game_score.current_score > score {
-            leader_board.add_player("new player".into(), game_score.current_score);
+            leader_board.add_player(game_score.current_score);
+            state.set(LeaderBoardState::InputName);
+            return;
         }
     }
     state.set(LeaderBoardState::Show);
@@ -177,7 +198,10 @@ fn spawn_leader_board(
         })
         .with_children(|parent| {
             for (name, value) in leader_board.players.iter() {
-                spawn_leader_line(parent, &text_style, name, value);
+                match name {
+                    Some(name) => spawn_leader_line(parent, &text_style, name, value),
+                    None => spawn_leader_input(parent, &text_style, value),
+                }
             }
         })
         .insert(LeaderBoardNode);
@@ -209,11 +233,61 @@ fn spawn_leader_line(parent: &mut ChildBuilder, text_style: &TextStyle, text: &s
         });
 }
 
+fn spawn_leader_input(parent: &mut ChildBuilder, text_style: &TextStyle, value: &u32) {
+    parent
+        .spawn(NodeBundle {
+            style: Style {
+                width: Val::Px(LINE_WIDTH),
+                height: Val::Px(LINE_HEIGHT),
+                border: UiRect::all(Val::Px(LINE_BORDER)),
+                justify_content: JustifyContent::SpaceBetween,
+                align_items: AlignItems::Center,
+                padding: UiRect::all(Val::Px(LINE_PADDING)),
+                ..default()
+            },
+            border_color: BorderColor(LINE_BORDER_COLOR),
+            background_color: LINE_COLOR.into(),
+            ..default()
+        })
+        .with_children(|parent| {
+            parent.spawn((
+                NodeBundle::default(),
+                TextInput {
+                    text_style: text_style.clone(),
+                    ..default()
+                },
+            ));
+            parent.spawn(TextBundle::from_section(
+                value.to_string(),
+                text_style.clone(),
+            ));
+        });
+}
+
+fn input_field_listener(
+    mut leader_board: ResMut<LeaderBoard>,
+    mut events: EventReader<TextInputSubmitEvent>,
+    mut state: ResMut<NextState<LeaderBoardState>>,
+) {
+    for event in events.iter() {
+        let mut name = event.value.clone();
+        // remove extra symbol
+        if cfg!(target_arch = "wasm32") {
+            name.pop();
+        }
+        leader_board.set_name(name);
+        state.set(LeaderBoardState::Show);
+    }
+}
+
 fn despawn_leader_board(
     mut commands: Commands,
+    mut leader_board: ResMut<LeaderBoard>,
     leader_board_query: Query<Entity, With<LeaderBoardNode>>,
 ) {
     for entity in leader_board_query.iter() {
         commands.entity(entity).despawn_recursive();
+        // set empty string, if user weren't enter name
+        leader_board.set_name(String::from(""));
     }
 }
