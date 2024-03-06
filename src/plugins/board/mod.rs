@@ -1,7 +1,10 @@
+pub use crate::plugins::game_score::IncrementCurrentGameScore;
+pub use crate::plugins::layout;
+
 mod ball;
 pub mod board;
 mod events;
-mod next_balls_plugin;
+mod next_balls;
 mod systems;
 
 use bevy::prelude::*;
@@ -9,13 +12,13 @@ use bevy::prelude::*;
 use ball::BallAssets;
 use board::Board;
 
-use next_balls_plugin::NextBallsPlugin;
+use next_balls::NextBallsPlugin;
 
 use events::*;
 use systems::*;
 
-use crate::GameOptions;
-use crate::GameState;
+pub use crate::GameOptions;
+pub use crate::GameState;
 
 pub struct BoardPlugin;
 

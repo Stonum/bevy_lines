@@ -2,15 +2,15 @@ use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use std::cmp::Ordering;
 
-use crate::events::IncrementCurrentGameScore;
-use crate::layout::MainCenter;
-use crate::GameOptions;
-use crate::GameState;
+use super::layout::MainCenter;
+use super::GameOptions;
+use super::GameState;
+use super::IncrementCurrentGameScore;
 
 use super::ball::*;
 use super::board::*;
 use super::events::*;
-use super::next_balls_plugin::*;
+use super::next_balls::*;
 use super::BoardTile;
 use super::Coordinates;
 

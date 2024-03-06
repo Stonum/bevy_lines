@@ -1,8 +1,7 @@
 use bevy::prelude::*;
 
-use crate::events::IncrementCurrentGameScore;
-use crate::layout::{HeaderLeft, HeaderRight, MainLeft, MainRight};
-use crate::leader_board_plugin::LeaderBoard;
+use super::layout::{HeaderLeft, HeaderRight, MainLeft, MainRight};
+use super::leader_board::LeaderBoard;
 use crate::{GameOptions, GameState};
 
 pub struct GameScorePlugin;
@@ -28,9 +27,13 @@ struct LeaderPodium;
 #[derive(Component)]
 struct ContenderPodium;
 
+#[derive(Event)]
+pub struct IncrementCurrentGameScore(pub u32);
+
 impl Plugin for GameScorePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<GameScore>()
+            .add_event::<IncrementCurrentGameScore>()
             .add_systems(Startup, (spawn_score_fields, spawn_score_avatars))
             .add_systems(
                 OnEnter(GameState::Playing),

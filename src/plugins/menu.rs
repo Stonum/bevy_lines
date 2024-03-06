@@ -1,7 +1,7 @@
 use bevy::ecs::component::Component;
 use bevy::prelude::*;
 
-use crate::layout::Footer;
+use super::layout::Footer;
 use crate::GameOptions;
 use crate::GameState;
 use crate::LeaderBoardState;

@@ -3,9 +3,9 @@ use bevy::prelude::*;
 use super::ball::BallAssets;
 use super::ball::BallColor;
 use super::events::ChangeNextBallsEvent;
-use crate::layout::HeaderCenter;
-use crate::GameOptions;
-use crate::GameState;
+use super::layout::HeaderCenter;
+use super::GameOptions;
+use super::GameState;
 
 pub struct NextBallsPlugin;
 

@@ -1,22 +1,17 @@
 // disable console on windows for release builds
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod board_plugin;
-mod events;
-mod game_score_plugin;
-pub mod layout;
-mod leader_board_plugin;
-mod menu_plugin;
+mod plugins;
+
 use bevy::prelude::*;
 use bevy_embedded_assets::EmbeddedAssetPlugin;
 use bevy_simple_text_input::TextInputPlugin;
 
-use board_plugin::BoardPlugin;
-use events::*;
-use game_score_plugin::GameScorePlugin;
-use layout::LayoutPlugin;
-use leader_board_plugin::LeaderBoardPlugin;
-use menu_plugin::MenuPlugin;
+use plugins::board::BoardPlugin;
+use plugins::game_score::GameScorePlugin;
+use plugins::layout::LayoutPlugin;
+use plugins::leader_board::LeaderBoardPlugin;
+use plugins::menu::MenuPlugin;
 
 #[derive(States, Default, Clone, Eq, PartialEq, Debug, Hash)]
 pub enum GameState {
@@ -75,7 +70,6 @@ fn main() {
         .add_plugins(TextInputPlugin);
 
     app.insert_resource(ClearColor(Color::BLACK));
-    app.add_event::<IncrementCurrentGameScore>();
 
     app.add_plugins((
         LayoutPlugin,

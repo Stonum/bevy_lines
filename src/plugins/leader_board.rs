@@ -6,8 +6,8 @@ use js_sys::JSON;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
-use crate::game_score_plugin::GameScore;
-use crate::layout::MainCenter;
+use super::game_score::GameScore;
+use super::layout::MainCenter;
 use crate::GameOptions;
 use crate::GameState;
 use crate::LeaderBoardState;
@@ -51,7 +51,12 @@ impl LeaderBoard {
             Some(players) => players,
             None => (1..=MAX_PLAYERS)
                 .into_iter()
-                .map(|x| (Some("Player ".to_string() + &x.to_string()), (x * 1) as u32))
+                .map(|x| {
+                    (
+                        Some("Player ".to_string() + &x.to_string()),
+                        (x * 100) as u32,
+                    )
+                })
                 .collect(),
         };
 

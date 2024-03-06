@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use rand::prelude::*;
 use std::collections::{HashMap, HashSet, VecDeque};
 
-use crate::GameOptions;
+use super::GameOptions;
 
 use super::ball::BallEntity;
 use super::Coordinates;
