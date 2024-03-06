@@ -176,12 +176,6 @@ pub fn handle_mouse_clicks(
                             query_next_ball.iter().for_each(|next_ball| {
                                 ev_spawn_balls.send(SpawnNewBallEvent(next_ball.color));
                             });
-                            // mb new combinations after spawn new balls
-                            despawn_balls_and_inc_score(
-                                &mut board,
-                                &mut commands,
-                                &mut ev_inc_score,
-                            );
 
                             // change next colors
                             ev_change_next.send(ChangeNextBallsEvent);
@@ -246,8 +240,10 @@ pub fn spawn_new_ball(
     mut commands: Commands,
     q_board_tile: Query<(&Coordinates, Entity), With<BoardTile>>,
     mut ev_spawn_balls: EventReader<SpawnNewBallEvent>,
+    mut ev_inc_score: EventWriter<IncrementCurrentGameScore>,
     mut game_state: ResMut<NextState<GameState>>,
 ) {
+    let mut balls_spawned = 0;
     for SpawnNewBallEvent(color) in ev_spawn_balls.iter() {
         let coord = match board.get_free_tile() {
             Some(free_coordinates) => free_coordinates,
@@ -278,12 +274,19 @@ pub fn spawn_new_ball(
                 board
                     .tiles_map
                     .insert(coord, Some(BallEntity::new(*color, entity)));
+
+                balls_spawned += 1;
             });
         }
 
         if board.get_free_tile().is_none() {
             game_state.set(GameState::GameOver);
         };
+    }
+
+    if balls_spawned > 0 {
+        // mb new combinations after spawn new balls
+        despawn_balls_and_inc_score(&mut board, &mut commands, &mut ev_inc_score);
     }
 }
 
