@@ -12,8 +12,8 @@ body {
 }
 
 .game-container {
-   width: 900px;
-   height: 600px;
+   width: 100vw;
+   height: 100vh;
    display: flex;
    justify-content: center;
    align-items: center;
@@ -51,7 +51,13 @@ body {
 }
 
 #bevy {
-   width: 0;
-   height: 0;
+   /* Fixed 3:2 internal resolution (900x600), scaled to fit the viewport
+      while preserving aspect ratio (letterboxed). The canvas' internal
+      pixel buffer stays exactly 900x600 (see WindowResolution in main.rs),
+      so this is a pure display-size scale, not a layout resize. */
+   width: min(100vw, 150vh) !important;
+   height: min(100vh, 66.6667vw) !important;
+   image-rendering: pixelated;
+   image-rendering: -moz-crisp-edges;
    z-index: 2;
 }
