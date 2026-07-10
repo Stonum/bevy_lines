@@ -32,7 +32,7 @@ pub enum LeaderBoardState {
 pub struct GameOptions;
 impl GameOptions {
     pub const TILE_SIZE: f32 = 45.0;
-    pub const TILE_PADDING: f32 = 2.5;
+    pub const TILE_PADDING: f32 = 2.0;
     pub const TILE_COUNT: u8 = 9;
     pub const BOARD_SIZE: f32 = GameOptions::TILE_SIZE * GameOptions::TILE_COUNT as f32;
     pub const BALL_SIZE: f32 = 35.0;
