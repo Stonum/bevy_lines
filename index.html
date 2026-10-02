@@ -64,11 +64,9 @@ body {
       so this is a pure display-size scale, not a layout resize. */
    width: min(100vw, 150vh) !important;
    height: min(100vh, 66.6667vw) !important;
-   image-rendering: pixelated;
-   image-rendering: -moz-crisp-edges;
    z-index: 2;
 }</style>
-<link rel="modulepreload" href="/bevy_lines/lines-f643e7ff86f3fcc8.js" crossorigin="anonymous" integrity="sha384-sPapeWncOD1iIgLwo5aqbD8+SnVzaTibuPcUX8UL4+Gj504V5deISc5mteq9cmbj"><link rel="preload" href="/bevy_lines/lines-f643e7ff86f3fcc8_bg.wasm" crossorigin="anonymous" integrity="sha384-+jqg10gHEr29dtkBFMDBPRfyKPoeZ0BxAdX+LCikulA1ehXB9WrA94JwNd4+Tvr0" as="fetch" type="application/wasm"></head>
+<link rel="modulepreload" href="/bevy_lines/lines-ce204971d5c0c23a.js" crossorigin="anonymous" integrity="sha384-m/xhwzG8Ttr78BkwNrhSuLyK5QqWpfWDK4E2zBwNpTOlr8reDthLBZWZmGQD5dA/"><link rel="preload" href="/bevy_lines/lines-ce204971d5c0c23a_bg.wasm" crossorigin="anonymous" integrity="sha384-9kRry25BAKxpM0CxXMdonRS+4eGickDgqX6lCPw0SEzNYOcZ9DTjTCNu/KMjlgVJ" as="fetch" type="application/wasm"></head>
 
 <body>
     <div class="game-container">
@@ -79,8 +77,8 @@ body {
     </div>
 
 <script type="module">
-import init, * as bindings from '/bevy_lines/lines-f643e7ff86f3fcc8.js';
-const wasm = await init('/bevy_lines/lines-f643e7ff86f3fcc8_bg.wasm');
+import init, * as bindings from '/bevy_lines/lines-ce204971d5c0c23a.js';
+const wasm = await init('/bevy_lines/lines-ce204971d5c0c23a_bg.wasm');
 
 
 window.wasmBindings = bindings;
