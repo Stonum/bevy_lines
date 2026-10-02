@@ -36,10 +36,10 @@ fn setup(
     asset_server: Res<AssetServer>,
     q_footer: Query<Entity, With<Footer>>,
 ) {
-    let font = asset_server.load("fonts/ThinPixel7.ttf");
+    let font = asset_server.load("fonts/BalsamiqSans-Bold.ttf");
     let text_style = TextStyle {
         font: font.clone(),
-        font_size: 35.0,
+        font_size: 24.0,
         color: Color::DARK_GRAY,
     };
 

@@ -27,6 +27,13 @@ struct LeaderPodium;
 #[derive(Component)]
 struct ContenderPodium;
 
+// avatar and pillar textures are drawn at 2x, so their on-screen size is set explicitly
+const AVATAR_WIDTH: f32 = 100.0;
+const AVATAR_HEIGHT: f32 = 112.0;
+const PILLAR_WIDTH: f32 = 100.0;
+const PILLAR_TOP_HEIGHT: f32 = 59.0;
+const PILLAR_BOTTOM_HEIGHT: f32 = 46.0;
+
 #[derive(Event)]
 pub struct IncrementCurrentGameScore(pub u32);
 
@@ -52,11 +59,16 @@ fn spawn_score_fields(
     l_header: Query<Entity, With<HeaderLeft>>,
     r_header: Query<Entity, With<HeaderRight>>,
 ) {
-    let font = asset_server.load("fonts/Glitch-Demo.ttf");
-    let text_style = TextStyle {
+    let font = asset_server.load("fonts/LilitaOne-Regular.ttf");
+    let best_style = TextStyle {
         font: font.clone(),
-        font_size: 60.0,
-        color: Color::GREEN,
+        font_size: 56.0,
+        color: Color::rgb(1.0, 0.80, 0.22),
+    };
+    let current_style = TextStyle {
+        font,
+        font_size: 56.0,
+        color: Color::rgb(0.45, 0.72, 1.0),
     };
 
     let l_header = l_header.get_single().expect("Header left not found");
@@ -65,7 +77,7 @@ fn spawn_score_fields(
         header.spawn((
             TextBundle {
                 text: Text {
-                    sections: vec![TextSection::new("", text_style.clone())],
+                    sections: vec![TextSection::new("", best_style)],
                     ..default()
                 },
                 ..default()
@@ -79,7 +91,7 @@ fn spawn_score_fields(
         header.spawn((
             TextBundle {
                 text: Text {
-                    sections: vec![TextSection::new("", text_style)],
+                    sections: vec![TextSection::new("", current_style)],
                     ..default()
                 },
                 ..default()
@@ -95,11 +107,11 @@ fn spawn_score_avatars(
     l_main: Query<Entity, With<MainLeft>>,
     r_main: Query<Entity, With<MainRight>>,
 ) {
-    let font = asset_server.load("fonts/ThinPixel7.ttf");
+    let font = asset_server.load("fonts/BalsamiqSans-Bold.ttf");
     let text_style = TextStyle {
         font: font.clone(),
-        font_size: 40.0,
-        color: Color::YELLOW_GREEN,
+        font_size: 26.0,
+        color: Color::rgb(0.88, 0.88, 0.88),
     };
 
     let l_main = l_main.get_single().expect("Main left not found");
@@ -115,21 +127,40 @@ fn spawn_score_avatars(
         })
         .with_children(|parent| {
             parent.spawn(ImageBundle {
+                style: Style {
+                    width: Val::Px(AVATAR_WIDTH),
+                    height: Val::Px(AVATAR_HEIGHT),
+                    ..default()
+                },
                 image: UiImage::new(asset_server.load("leader.png")),
                 ..default()
             });
             parent.spawn(ImageBundle {
+                style: Style {
+                    width: Val::Px(PILLAR_WIDTH),
+                    height: Val::Px(PILLAR_TOP_HEIGHT),
+                    ..default()
+                },
                 image: UiImage::new(asset_server.load("pillar_top.png")),
                 ..default()
             });
             parent.spawn((
                 ImageBundle {
+                    style: Style {
+                        width: Val::Px(PILLAR_WIDTH),
+                        ..default()
+                    },
                     image: UiImage::new(asset_server.load("pillar.png")),
                     ..default()
                 },
                 LeaderPodium,
             ));
             parent.spawn(ImageBundle {
+                style: Style {
+                    width: Val::Px(PILLAR_WIDTH),
+                    height: Val::Px(PILLAR_BOTTOM_HEIGHT),
+                    ..default()
+                },
                 image: UiImage::new(asset_server.load("pillar_bottom.png")),
                 ..default()
             });
@@ -156,21 +187,40 @@ fn spawn_score_avatars(
         })
         .with_children(|parent| {
             parent.spawn(ImageBundle {
+                style: Style {
+                    width: Val::Px(AVATAR_WIDTH),
+                    height: Val::Px(AVATAR_HEIGHT),
+                    ..default()
+                },
                 image: UiImage::new(asset_server.load("contender.png")),
                 ..default()
             });
             parent.spawn(ImageBundle {
+                style: Style {
+                    width: Val::Px(PILLAR_WIDTH),
+                    height: Val::Px(PILLAR_TOP_HEIGHT),
+                    ..default()
+                },
                 image: UiImage::new(asset_server.load("pillar_top.png")),
                 ..default()
             });
             parent.spawn((
                 ImageBundle {
+                    style: Style {
+                        width: Val::Px(PILLAR_WIDTH),
+                        ..default()
+                    },
                     image: UiImage::new(asset_server.load("pillar.png")),
                     ..default()
                 },
                 ContenderPodium,
             ));
             parent.spawn(ImageBundle {
+                style: Style {
+                    width: Val::Px(PILLAR_WIDTH),
+                    height: Val::Px(PILLAR_BOTTOM_HEIGHT),
+                    ..default()
+                },
                 image: UiImage::new(asset_server.load("pillar_bottom.png")),
                 ..default()
             });
